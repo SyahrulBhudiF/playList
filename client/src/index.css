@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Syne:wght@700;800&family=Bebas+Neue&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-groovy-primary: #f97316;
+  --color-groovy-secondary: #64303B;
+  --color-groovy-accent: #f97316;
+  --color-groovy-deep: #1a1a1a;
+  --color-groovy-bg: #f8f8f6;
+  --color-groovy-text: #1a1a1a;
+  --color-groovy-border: rgba(0, 0, 0, 0.05);
+
+  /* Dashboard specific */
+  --color-playlist-bg: #f8f8f6;
+  --color-playlist-sidebar: #ffffff;
+  --color-playlist-accent: #f97316;
+  --color-playlist-card: #ffffff;
+  --color-playlist-text: #1a1a1a;
+
+  --font-syne: "Syne", sans-serif;
+  --font-bebas: "Bebas Neue", sans-serif;
+  --font-poppins: "Poppins", sans-serif;
+  --font-inter: "Poppins", sans-serif; /* Fallback for existing inter classes */
+}
+
+@layer base {
+  :root {
+    --background: #FCFBF7;
+    --foreground: #39283F;
+    --card: #ffffff;
+    --card-foreground: #39283F;
+    --popover: #ffffff;
+    --popover-foreground: #39283F;
+    --primary: #FDB017;
+    --primary-foreground: #ffffff;
+    --secondary: #39283f;
+    --secondary-foreground: #ffffff;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+    --accent: #FF4D00;
+    --accent-vibrant: #F57923;
+    --accent-glow: #FDB017;
+    --accent-foreground: #ffffff;
+    --destructive: #ef4444;
+    --destructive-foreground: #f8fafc;
+    --border: rgba(57, 40, 63, 0.1);
+    --input: #e2e8f0;
+    --ring: #FDB017;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: var(--font-poppins);
+  }
+
+  .font-editorial {
+    font-family: var(--font-bebas);
+    letter-spacing: 0.02em;
+  }
+
+  .animate-spin-slow {
+    animation: spin 12s linear infinite;
+  }
+
+  .shadow-soft {
+    box-shadow: 0 10px 30px -10px rgba(57, 40, 63, 0.12);
+  }
+
+  .border-thin {
+    border-width: 1px;
+    border-style: solid;
+  }
+
+  .mask-fade-edges {
+    mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+  }
+}

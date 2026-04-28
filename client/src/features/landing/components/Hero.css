@@ -1,0 +1,49 @@
+.hero-container {
+  perspective: 1000px;
+}
+
+.vinyl-wrapper {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  cursor: pointer;
+}
+
+.vinyl-wrapper:hover {
+  transform: translateY(-10px) scale(1.02);
+}
+
+.vinyl-wrapper:hover .vinyl-spin {
+  animation-play-state: running;
+}
+
+.vinyl-spin {
+  animation: spin 15s linear infinite;
+}
+
+.vinyl-spin.paused {
+  animation-play-state: paused;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.cta-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  pointer-events: none;
+}
+
+.editorial-line {
+  height: 1px;
+  background: var(--color-groovy-deep);
+  opacity: 0.1;
+  width: 100%;
+}
