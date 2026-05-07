@@ -14,8 +14,10 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@types/ioredis": "^5.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "ioredis": "^5.10.1",
     "postgres": "^3.4.9",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",

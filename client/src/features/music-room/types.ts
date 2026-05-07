@@ -1,4 +1,4 @@
-import { Track } from '../../shared/types';
+import type { Track } from '../../shared/types';
 
 export interface StationSequenceProps {
     queue: Track[];

@@ -16,7 +16,10 @@ if (!connectionString) {
 
 // We use neon postgres. Default options are fine.
 export const sql = postgres(connectionString || "", {
-  ssl: connectionString?.includes("localhost") || connectionString?.includes("127.0.0.1") ? false : "require",
+  ssl: connectionString?.includes("localhost") || 
+       connectionString?.includes("127.0.0.1") || 
+       connectionString?.includes("@postgres") || 
+       connectionString?.includes("sslmode=disable") ? false : "require",
   max: 10,
   connect_timeout: 45, // Increased timeout for Neon cold-starts (45s)
   idle_timeout: 20,    // Close idle connections after 20s

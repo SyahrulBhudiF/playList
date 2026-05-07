@@ -4,6 +4,36 @@ export async function setupDatabase() {
   console.log("🛠️  Setting up database schema...");
 
   try {
+    // Admins table
+    console.log("  - Ensuring 'admins' table exists...");
+    await sql`
+      CREATE TABLE IF NOT EXISTS admins (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        username VARCHAR(50) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        role VARCHAR(20) NOT NULL DEFAULT 'admin', -- super_admin, admin
+        status VARCHAR(20) NOT NULL DEFAULT 'pending', -- active, pending, suspended
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `;
+
+    // Migration: Add email, role, status to admins
+    await sql`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='admins' AND column_name='email') THEN
+          ALTER TABLE admins ADD COLUMN email VARCHAR(255) UNIQUE;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='admins' AND column_name='role') THEN
+          ALTER TABLE admins ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'admin';
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='admins' AND column_name='status') THEN
+          ALTER TABLE admins ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending';
+        END IF;
+      END $$;
+    `;
+
     // Rooms table
     console.log("  - Ensuring 'rooms' table exists...");
     await sql`
@@ -45,6 +75,30 @@ export async function setupDatabase() {
       CREATE INDEX IF NOT EXISTS songs_queue_idx ON songs(room_id, status, approved_at);
     `;
 
+
+    // Migration: Add passkey to rooms if it doesn't exist
+    await sql`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='rooms' AND column_name='passkey') THEN
+          ALTER TABLE rooms ADD COLUMN passkey VARCHAR(5);
+        END IF;
+      END $$;
+    `;
+
+    // Migration: Add owner_id to rooms if it doesn't exist
+    await sql`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='rooms' AND column_name='owner_id') THEN
+          ALTER TABLE rooms ADD COLUMN owner_id UUID REFERENCES admins(id) ON DELETE SET NULL;
+        END IF;
+      END $$;
+    `;
+
+    // Seeding initial admins
+    const { seedAdmins } = await import("./seed");
+    await seedAdmins();
 
     console.log("✅ Database schema ready.");
   } catch (error: any) {

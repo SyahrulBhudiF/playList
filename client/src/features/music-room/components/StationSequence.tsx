@@ -1,29 +1,94 @@
-import { Plus } from 'lucide-react';
-import { Link } from '@tanstack/react-router';
+import React from "react";
+import { Link } from "@tanstack/react-router";
+import { Music, Plus, Headphones, Radio } from "lucide-react";
+import { Button } from "../../../shared/components/button";
+import type { Track } from "../../../shared/types";
 
-import type { StationSequenceProps } from '../types';
+interface StationSequenceProps {
+  queue: Track[];
+  roomId: string;
+}
 
-export const StationSequence = ({ queue, roomId }: StationSequenceProps) => {
-    return (
-        <aside className="flex-1 flex flex-col justify-center border-l border-black/10 pl-16 max-w-sm">
-            <h3 className="text-xs font-bold tracking-normal text-black/60 uppercase font-poppins mb-12">Up Next</h3>
-            <div className="space-y-10 mb-16">
-                {queue.slice(0, 3).map((song, i) => (
-                    <div key={i} className="group cursor-default opacity-60 hover:opacity-100 transition-opacity">
-                        <p className="text-xl font-bold text-black transition-colors leading-tight font-poppins uppercase tracking-tight">
-                            {song.title}
-                        </p>
-                        <p className="text-xs font-bold text-black/50 uppercase tracking-normal mt-2 font-poppins">{song.author || 'UNKNOWN'}</p>
-                    </div>
-                ))}
+export const StationSequence: React.FC<StationSequenceProps> = ({
+  queue,
+  roomId,
+}) => {
+  return (
+    <aside className="w-full bg-white/40 backdrop-blur-md border-l border-black/5 flex flex-col p-12">
+      <div className="flex items-center justify-between mb-16">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white">
+            <Radio size={18} strokeWidth={2.5} />
+          </div>
+          <span className="text-sm font-bold uppercase tracking-[0.2em] text-black">
+            Up Next
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+          <span className="text-xs font-bold text-black/20 uppercase tracking-widest">
+            Live
+          </span>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto space-y-10 pr-4 no-scrollbar">
+        {queue.length === 0 && (
+          <div className="h-48 flex flex-col items-center justify-center border-2 border-dashed border-black/5 px-8 text-center">
+            <Headphones className="text-black/5 mb-4" size={32} />
+            <span className="text-xs font-bold text-black/20 uppercase tracking-widest leading-relaxed">
+              Queue is empty
+              <br />
+              Add some songs!
+            </span>
+          </div>
+        )}
+
+        {queue.map((track, index) => (
+          <div key={track.id} className="group relative">
+            <div className="flex items-center gap-6">
+              <span className="text-[10px] font-bold text-black/10 uppercase font-poppins shrink-0">
+                {(index + 1).toString().padStart(2, "0")}
+              </span>
+              <div className="relative w-16 h-16 shrink-0 bg-black/5 overflow-hidden rounded-sm">
+                {track.thumbnail ? (
+                  <img
+                    src={track.thumbnail}
+                    alt={track.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-60"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-black/5">
+                    <Music size={24} className="text-black/10" />
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-bold text-black uppercase tracking-tight truncate font-poppins">
+                  {track.title}
+                </span>
+                <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest truncate mt-1">
+                  {track.artist || track.author}
+                </span>
+              </div>
             </div>
-            
-            <Link to="/r/$roomId/request" params={{ roomId }} className="flex items-center gap-6 group">
-                <div className="w-12 h-12 rounded-full border border-black/10 bg-white flex items-center justify-center text-black/60 shadow-sm group-hover:border-orange-500/40 group-hover:bg-orange-500/5 group-hover:text-orange-500 transition-all">
-                    <Plus size={20} />
-                </div>
-                <span className="text-xs font-bold tracking-normal text-black/50 group-hover:text-black transition-colors uppercase font-poppins">Add to queue</span>
-            </Link>
-        </aside>
-    );
+          </div>
+        ))}
+      </div>
+
+      <Button
+        asChild
+        variant="outline"
+        className="mt-8 w-full border-black/10 font-bold uppercase tracking-widest hover:border-black hover:bg-black/5 transition-all text-black/60 hover:text-black group"
+      >
+        <Link to="/r/$roomId/request" params={{ roomId }}>
+          <Plus
+            size={14}
+            className="mr-2 text-orange-500 group-hover:rotate-90 transition-transform"
+          />
+          <span>Add to queue</span>
+        </Link>
+      </Button>
+    </aside>
+  );
 };

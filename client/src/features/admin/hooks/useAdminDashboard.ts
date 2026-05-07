@@ -7,6 +7,7 @@ import type { Track, PendingSong, SearchResult } from '../types';
 export function useAdminDashboard(roomId: string) {
   // --- STATE: GLOBAL ---
   const [connected, setConnected] = useState(false);
+  const [roomKey, setRoomKey] = useState<string | null>(null);
   
   // --- STATE: PLAYER (EO) ---
   const [nowPlaying, setNowPlaying] = useState<Track | null>(null);
@@ -17,17 +18,12 @@ export function useAdminDashboard(roomId: string) {
 
   // --- STATE: MODERATION (Admin) ---
   const [pendingQueue, setPendingQueue] = useState<PendingSong[]>([]);
+  const [fullQueue, setFullQueue] = useState<Track[]>([]);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
 
-  // --- STATE: SEARCH (Add Music) ---
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [submittingId, setSubmittingId] = useState<string | null>(null);
 
-  const debouncedSearch = useDebounce(searchQuery, 150);
 
   // --- SOCKET LIFECYCLE ---
   useEffect(() => {
@@ -35,17 +31,33 @@ export function useAdminDashboard(roomId: string) {
     
     console.log(`[DASHBOARD] Connecting to room: ${roomId}`);
     socket.connect();
-    socket.emit('join_room', { roomId, role: 'admin' });
+    
+    const adminToken = localStorage.getItem('adminToken');
+    if (!adminToken) {
+      alert("Unauthorized. Please log in.");
+      window.location.href = '/admin/login';
+      return;
+    }
+
+    socket.emit('join_room', { roomId, role: 'admin', adminToken }, (res: any) => {
+      if (res && !res.success) {
+        alert(res.error || "Failed to join room");
+        window.location.href = '/admin';
+      }
+    });
+
+    socket.on('connect', () => {
+      console.log("[DASHBOARD] Socket connected");
+      setConnected(true);
+    });
 
     socket.on('eo_registered', () => {
       console.log("[DASHBOARD] EO Registered successfully");
-      setConnected(true);
-      socket.emit('eo_track_ended', { roomId }, (res: any) => {
-        if (res.success) {
-          setNowPlaying(res.nextTrack);
-          setUpNext(res.upNext);
-        }
-      });
+    });
+
+    socket.on('room_key_info', ({ passkey }: { passkey: string }) => {
+      console.log(`[DASHBOARD] Room Key: ${passkey}`);
+      setRoomKey(passkey);
     });
 
     socket.on('now_playing_updated', (track: Track) => {
@@ -54,9 +66,16 @@ export function useAdminDashboard(roomId: string) {
 
     socket.on('queue_updated', (queue: PendingSong[]) => {
       setPendingQueue(queue.filter(q => q.status === 'pending'));
+      setFullQueue(queue.filter(q => q.status === 'approved') as Track[]);
+      
+      // If we're not playing anything, try to fetch the next song immediately
+      if (!nowPlaying) {
+        fetchNext();
+      }
     });
 
     socket.on('new_pending_song', (song: PendingSong) => {
+      console.log("[DASHBOARD] New pending song received:", song);
       setPendingQueue(prev => [...prev, song]);
     });
 
@@ -76,6 +95,7 @@ export function useAdminDashboard(roomId: string) {
 
     return () => {
       socket.off('eo_registered');
+      socket.off('room_key_info');
       socket.off('now_playing_updated');
       socket.off('queue_updated');
       socket.off('new_pending_song');
@@ -161,19 +181,45 @@ export function useAdminDashboard(roomId: string) {
     });
   };
 
+  // --- STATE: SEARCH (Add Music) ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
+
+  const debouncedSearch = useDebounce(searchQuery, 150);
+
+  // --- SOCKET LIFECYCLE ---
+
   // --- LOGIC: SEARCH ---
   useEffect(() => {
-    if (debouncedSearch.trim().length < 3) {
-      if (debouncedSearch.trim().length === 0) setSearchResults([]);
-      setSearchLoading(false);
+    if (debouncedSearch.trim().length < 2) {
+      setSuggestions([]);
       return;
     }
-    setSearchLoading(true);
-    socket.emit('search_songs', { query: debouncedSearch }, (res: any) => {
-      setSearchLoading(false);
-      if (res.success) setSearchResults(res.results);
+    
+    // As user types, get fast suggestions
+    socket.emit('get_search_suggestions', { query: debouncedSearch }, (res: any) => {
+      if (res.success) {
+        setSuggestions(res.suggestions);
+      }
     });
   }, [debouncedSearch]);
+
+  const handleSelectSuggestion = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    setSuggestions([]);
+    setSearchLoading(true);
+    
+    // When a suggestion is picked, fetch the HIGH FIDELITY video result
+    socket.emit('search_songs', { query: suggestion }, (res: any) => {
+      setSearchLoading(false);
+      if (res.success) {
+        setSearchResults(res.results);
+      }
+    });
+  };
 
   const handleAddSong = (song: SearchResult) => {
     setSubmittingId(song.youtubeId);
@@ -187,27 +233,36 @@ export function useAdminDashboard(roomId: string) {
       if (res.success) {
         setSearchQuery('');
         setSearchResults([]);
+        setSuggestions([]);
       }
     });
   };
 
+  const togglePlayback = (playing: boolean) => {
+    socket.emit('toggle_playback', { roomId, isPlaying: playing });
+  };
   return {
     connected,
+    roomKey,
     nowPlaying,
     upNext,
     activePlayer,
     pendingQueue,
+    fullQueue,
     processingId,
     editingId,
     editValue,
     setEditValue,
     searchQuery,
     setSearchQuery,
+    suggestions,
+    onSelectSuggestion: handleSelectSuggestion,
     searchResults,
     searchLoading,
     submittingId,
     onPlayerReady,
     onPlayerEnd,
+    togglePlayback,
     handleApprove,
     handleDelete,
     startEditing,

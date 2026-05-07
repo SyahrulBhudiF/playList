@@ -10,7 +10,7 @@ async function checkConnection() {
     const result = await sql`SELECT 1 as connected`;
     const duration = Date.now() - startTime;
     
-    if (result && result[0].connected === 1) {
+    if (result?.[0]?.connected === 1) {
       console.log(`✅ SUCCESS! Database is reachable.`);
       console.log(`⏱️  Latency: ${duration}ms`);
     }
@@ -24,7 +24,7 @@ async function checkConnection() {
     console.log(`\n💡 DIAGNOSIS:`);
     if (error.code === 'ETIMEDOUT') {
       console.log("  - Your network is taking too long to respond.");
-      console.log("  - Possible cause: Firewall is dropping packets to port 5432.");
+      console.log("  - Possible cause: Firewall is dropping packets to the database port (default 5432/5433).");
       console.log("  - Possible cause: Your IP address is not whitelisted in Neon.");
     } else if (error.code === 'ECONNREFUSED') {
       console.log("  - The host actively refused the connection.");
@@ -35,7 +35,7 @@ async function checkConnection() {
     
     console.log(`\n🚀 RECOMMENDED SOLUTIONS:`);
     console.log("  1. If using Neon: Add your IP to the 'Allowed IP Addresses' in Neon console.");
-    console.log("  2. If port 5432 is blocked: Use a local database (see .env instructions).");
+    console.log("  2. If the default port is blocked: Use an alternative port (e.g., 5433) in your .env.");
     console.log("  3. Check if your DATABASE_URL contains trailing spaces or typos.");
   } finally {
     process.exit(0);

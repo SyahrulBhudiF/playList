@@ -1,8 +1,8 @@
-import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Loader2, Plus } from 'lucide-react';
+import { Plus, Loader2, Search } from 'lucide-react';
 import { Button } from '@/shared/components/button';
-import { Input } from '@/shared/components/input';
+import { Card } from '@/shared/components/card';
+import { SearchBar } from '@/shared/components/SearchBar';
 import type { SongSearchProps } from '../types';
 
 export function SongSearch({
@@ -10,33 +10,53 @@ export function SongSearch({
   setSearchQuery,
   searchLoading,
   searchResults,
+  suggestions,
+  onSelectSuggestion,
   handleAddSong,
   submittingId
 }: SongSearchProps) {
   return (
-    <section className="flex flex-col gap-8 w-full max-w-2xl mx-auto">
+    <section className="flex flex-col gap-8 w-full max-w-3xl mx-auto h-[700px]">
       <div className="text-center space-y-2">
-          <h4 className="text-sm font-bold tracking-normal text-[#F57923] uppercase">Find Tracks</h4>
-          <p className="text-sm font-bold text-[#39283f]/60 uppercase ">Add songs to the music room</p>
+          <h4 className="text-sm font-bold tracking-normal text-orange-500 uppercase">Track Discovery</h4>
+          <p className="text-sm font-bold text-black/40 uppercase">Find and add tracks to the broadcast</p>
       </div>
 
-      <div className="relative group">
-        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[#39283f]/40 group-focus-within:text-[#F57923] transition-colors">
-          {searchLoading ? (
-            <div className="animate-spin">
-              <Loader2 size={24} />
-            </div>
-          ) : <Search size={24} />}
-        </div>
-        <Input 
+      <div className="relative">
+        <SearchBar 
           value={searchQuery}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-          placeholder="SEARCH SONGS"
-          className="bg-white border-2 border-[#39283f]/10 rounded-4xl h-20 pl-16 pr-8 focus-visible:ring-0 focus-visible:border-[#F57923] text-black font-bold  shadow-sm transition-all text-lg placeholder:text-[#39283f]/40"
+          onChange={setSearchQuery}
+          placeholder="TYPE SONG TITLE..."
+          loading={searchLoading}
+          autoFocus
         />
+
+        {/* Suggestions Overlay */}
+        <AnimatePresence>
+          {suggestions.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-24 left-0 right-0 bg-white border border-black/5 rounded-3xl shadow-2xl z-50 overflow-hidden"
+            >
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => onSelectSuggestion(s)}
+                  className="w-full text-left px-8 py-5 text-[17px] font-bold text-black/60 hover:bg-[#f8f8f7] hover:text-orange-500 transition-all flex items-center gap-4 border-b border-black/2 last:border-0"
+                >
+                  <Search size={16} className="text-black/10" />
+                  {s}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <div className="space-y-4">
+      {/* Results Area — Independently Scrollable */}
+      <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar space-y-4">
         <AnimatePresence mode="popLayout">
           {searchResults.map((song) => (
             <motion.article 
@@ -45,36 +65,37 @@ export function SongSearch({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
             >
-              <div className="flex items-center gap-6 p-4 bg-white border-2 border-[#39283f]/5 rounded-4xl hover:border-[#F57923]/30 hover:shadow-xl transition-all group">
-                 <div className="relative w-24 h-16 shrink-0 overflow-hidden rounded-2xl shadow-md">
+              <Card variant="premium-list" className="flex items-center gap-6 group">
+                 <div className="relative w-28 h-20 shrink-0 overflow-hidden rounded-2xl shadow-md">
                     <img src={song.thumbnail} className="w-full h-full object-cover" alt="" />
                  </div>
                  
                   <div className="flex-1 min-w-0">
-                    <p className="text-[17px] font-bold text-[#39283f] truncate mb-1">{song.title}</p>
-                    <p className="text-[11px] font-bold  text-[#39283f]/40 uppercase">Source: YouTube</p>
+                    <p className="text-[19px] font-bold text-black tracking-tight truncate mb-1">{song.title}</p>
+                    <p className="text-[11px] font-bold text-black/30 uppercase tracking-widest">{song.author || 'YouTube Audio'}</p>
                   </div>
 
                  <Button 
                    onClick={() => handleAddSong(song)}
                    disabled={submittingId === song.youtubeId}
-                   className="h-14 w-14 rounded-2xl bg-[#39283f] text-white hover:bg-[#F57923] shadow-lg transition-all active:scale-95"
+                   variant="premium"
+                   className="h-16 w-16 px-0"
                  >
                    {submittingId === song.youtubeId ? (
                      <div className="animate-spin">
-                       <Loader2 size={18} />
+                       <Loader2 size={20} />
                      </div>
-                   ) : <Plus size={24} />}
+                   ) : <Plus size={28} />}
                  </Button>
-              </div>
+              </Card>
             </motion.article>
           ))}
         </AnimatePresence>
 
-        {searchResults.length === 0 && searchQuery.length > 2 && !searchLoading ? (
+        {searchResults.length === 0 && searchQuery.length > 2 && !searchLoading && suggestions.length === 0 ? (
            <div className="py-20 text-center opacity-10">
               <Search size={48} className="mx-auto mb-4" />
-              <p className="text-xs font-bold  uppercase">No results found</p>
+              <p className="text-xs font-bold uppercase tracking-widest">No matching tracks</p>
            </div>
         ) : null}
       </div>

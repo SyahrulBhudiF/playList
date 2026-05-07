@@ -3,6 +3,8 @@ export interface Track {
   youtubeId: string;
   title: string;
   author: string;
+  artist?: string;
+  thumbnail?: string;
 }
 
 export interface PendingSong {

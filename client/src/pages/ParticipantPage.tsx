@@ -1,236 +1,238 @@
-import { useParams, Link } from '@tanstack/react-router';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Loader2, Play, Music, Radio } from 'lucide-react';
-import { Input } from '@/shared/components/input';
-import { Button } from '@/shared/components/button';
-import { useParticipant } from '../features/participant/hooks/useParticipant';
+import { useEffect } from "react";
+import { Link } from "@tanstack/react-router";
+import { motion, AnimatePresence } from "framer-motion";
+import { Home, CheckCircle2, AlertCircle } from "lucide-react";
+
+// Shared Components
+import { Badge } from "@/shared/components/badge";
+import { SecretDoor } from "@/shared/components/SecretDoor";
+import { TransitionOverlay } from "@/shared/components/TransitionOverlay";
+import { MusicRoomView } from "../features/shared/components/MusicRoomView";
+
+// Feature Components
+import { JoinFlow } from "../features/participant/components/JoinFlow";
+import { RequestFlow } from "../features/participant/components/RequestFlow";
+import { NowPlayingBar } from "../features/participant/components/NowPlayingBar";
+
+// Page Logic
+import { useParticipantPage } from "../hooks/pages/useParticipantPage";
 
 export function ParticipantPage() {
-  const { roomId } = useParams({ from: '/r/$roomId/request' }) as { roomId: string };
-  
   const {
+    roomId,
+    passkey,
+    handlePasskeyChange,
+    isJoined,
+    isRevealing,
+    isResolving,
     query,
     setQuery,
+    isConfirmed,
+    setIsConfirmed,
     results,
     loading,
     submitting,
+    nowPlaying,
+    queue,
     statusMsg,
-    handleSelect
-  } = useParticipant(roomId);
+    suggestions,
+    handleSelect,
+    handleKeySubmit,
+    vibes,
+    activeTab,
+    setActiveTab,
+  } = useParticipantPage();
 
-  const vibes = ['Chill', 'Hype', 'Focus', 'Throwback', 'R&B', 'Lo-Fi'];
-  const trending = ['Drake', 'SZA', 'The Weeknd', 'Frank Ocean', 'Kendrick Lamar'];
+  // SEO
+  useEffect(() => {
+    document.title = isJoined
+      ? `Station ${roomId.toUpperCase()} | PLAY LIST`
+      : "Join Broadcast | PLAY LIST";
+  }, [isJoined, roomId]);
 
   return (
-    <div className="min-h-screen bg-[#fdfdfc] text-[#1a101c] font-poppins p-6 md:px-12 md:py-8 overflow-hidden relative">
-      
-      {/* Background Decor: Ripples */}
+    <div className="min-h-screen bg-[#fdfdfc] text-[#1a101c] font-poppins overflow-x-hidden relative selection:bg-orange-500 selection:text-white">
+      {/* BACKGROUND DECOR */}
       <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center opacity-[0.03]">
-          <div className="w-[400px] h-[400px] border border-black rounded-full" />
-          <div className="absolute w-[600px] h-[600px] border border-black rounded-full" />
-          <div className="absolute w-[800px] h-[800px] border border-black rounded-full" />
-          <div className="absolute w-[1000px] h-[1000px] border border-black rounded-full" />
+        <div className="w-[400px] h-[400px] border border-black rounded-full" />
+        <div className="absolute w-[600px] h-[600px] border border-black rounded-full" />
+        <div className="absolute w-[800px] h-[800px] border border-black rounded-full" />
       </div>
 
-      {/* Header Area REMOVED DUPLICATE LOGO (SecretDoor in ParticipantLayout covers it) */}
-      <header className="flex justify-end items-center mb-16 relative z-20">
-        <div className="hidden md:flex items-center gap-4 bg-white/50 backdrop-blur-sm border border-black/5 rounded-full px-5 py-2">
-            <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_8px_rgba(249,115,22,1)]" />
-            <span className="text-[12px] font-bold tracking-normal text-black/60 uppercase">Room: {roomId.toUpperCase()}</span>
+      {/* HEADER */}
+      <header className="fixed top-0 left-0 right-0 z-40 px-6 py-6 md:px-12 flex justify-between items-center bg-white/10 backdrop-blur-sm">
+        <div className="flex items-center gap-5">
+          <SecretDoor size="xl" />
+          <div className="flex flex-col">
+            <span className="font-bebas text-4xl tracking-tighter text-black leading-none uppercase">
+              PLAY LIST
+            </span>
+            <span className="text-[9px] text-black/20 font-bold uppercase tracking-[0.2em] leading-none mt-1">
+              Room // {roomId?.toUpperCase() || "Music Room"}
+            </span>
+          </div>
+
+          {isJoined && (
+            <div className="hidden lg:flex items-center gap-6 ml-8">
+              <button
+                onClick={() => setActiveTab("request")}
+                className={`text-[12px] font-bold uppercase tracking-[0.3em] transition-all ${activeTab === "request" ? "text-orange-500" : "text-black/20 hover:text-black"}`}
+              >
+                Request
+              </button>
+              <button
+                onClick={() => setActiveTab("music")}
+                className={`text-[12px] font-bold uppercase tracking-[0.3em] transition-all ${activeTab === "music" ? "text-orange-500" : "text-black/20 hover:text-black"}`}
+              >
+                Music Room
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-4">
+          {isJoined && (
+            <Badge
+              variant="outline"
+              className="hidden md:flex items-center gap-2 bg-white border-black/10 rounded-full px-6 py-3 h-auto text-sm font-bold tracking-widest text-black/40 uppercase"
+            >
+              <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+              Room: {roomId.toUpperCase()}
+            </Badge>
+          )}
+          <Link
+            to="/"
+            className="w-10 h-10 rounded-full bg-white border border-black/10 flex items-center justify-center text-black/40 hover:text-black transition-colors"
+          >
+            <Home size={18} />
+          </Link>
         </div>
       </header>
 
-      {/* Wave Search Visualizer (Oscilloscope Style) */}
-      <div className="absolute top-48 left-0 right-0 h-32 pointer-events-none z-10 overflow-hidden opacity-20">
-          <svg viewBox="0 0 1440 120" className="w-full h-full">
-              <motion.path 
-                  d="M0 60 Q 360 10, 720 60 T 1440 60"
-                  fill="none"
-                  stroke="#F57923"
-                  strokeWidth="1.5"
-                  animate={{
-                      d: [
-                          "M0 60 Q 360 10, 720 60 T 1440 60",
-                          "M0 60 Q 360 110, 720 60 T 1440 60",
-                          "M0 60 Q 360 10, 720 60 T 1440 60"
-                      ]
-                  }}
-                  transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-              />
-              <motion.path 
-                  d="M0 60 Q 360 40, 720 60 T 1440 60"
-                  fill="none"
-                  stroke="#F57923"
-                  strokeWidth="0.5"
-                  animate={{
-                      d: [
-                          "M0 60 Q 360 80, 720 60 T 1440 60",
-                          "M0 60 Q 360 40, 720 60 T 1440 60",
-                          "M0 60 Q 360 80, 720 60 T 1440 60"
-                      ]
-                  }}
-                  transition={{ repeat: Infinity, duration: 3, ease: "easeInOut", delay: 1 }}
-              />
-          </svg>
-      </div>
-
-      <main className="max-w-6xl mx-auto w-full relative z-20 flex flex-col items-center">
-        
-        {/* Compact Editorial Header */}
-        <div className="mb-20 text-center">
-            <motion.h1 
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-5xl md:text-7xl font-bebas tracking-tight text-black mb-4 uppercase"
-            >
-                Search your vibe
-            </motion.h1>
-            <p className="text-black/40 text-[14px] font-bold tracking-widest uppercase font-poppins">Broadcast Sound Archive</p>
-        </div>
-
-        {/* Rounded Modern Search Bar */}
-        <div className="w-full relative group mb-24 max-w-2xl mx-auto">
-            <Input 
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search for tracks..."
-                className="w-full bg-white/80 backdrop-blur-xl border border-black/5 rounded-full h-18 pl-10 pr-16 text-xl focus:ring-0 focus:border-orange-500/50 transition-all shadow-sm focus:shadow-2xl focus:shadow-orange-500/5 font-bold font-poppins placeholder:text-black/10"
-            />
-            <div className="absolute right-6 top-1/2 -translate-y-1/2">
-                {loading ? (
-                  <div className="animate-spin text-orange-500">
-                    <Loader2 size={24} />
-                  </div>
-                ) : <Search size={22} className="text-black/20 group-focus-within:text-orange-500 transition-colors" />}
-            </div>
-        </div>
-
-        {/* CONDITIONAL SECTION: VIBES OR RESULTS */}
-        <div className="w-full">
-            <AnimatePresence mode="wait">
-                {!query ? (
-                    <motion.section 
-                        key="vibes"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="w-full space-y-10 mb-16"
-                    >
-                        <div className="flex flex-col items-center">
-                            <h2 className="text-[12px] font-bold tracking-normal uppercase text-black/60 mb-6">Or pick a vibe</h2>
-                            <div className="flex flex-wrap justify-center gap-4">
-                                {vibes.map((v) => (
-                                    <Button 
-                                        key={v}
-                                        variant="outline"
-                                        onClick={() => setQuery(v)}
-                                        className="px-8 py-3 bg-white border border-black/10 rounded-full text-[14px] font-bold text-black/60 hover:text-black hover:border-black hover:shadow-md transition-all uppercase font-poppins"
-                                    >
-                                        {v}
-                                    </Button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col items-center">
-                            <h2 className="text-[12px] font-bold tracking-normal uppercase text-black/60 mb-6">Popular here</h2>
-                            <div className="flex flex-wrap justify-center gap-3">
-                                {trending.map((t) => (
-                                    <button 
-                                        key={t}
-                                        onClick={() => setQuery(t)}
-                                        className="px-8 py-3 bg-white border border-black/10 rounded-full text-[14px] font-bold text-black/60 hover:text-black hover:border-black hover:shadow-md transition-all uppercase "
-                                    >
-                                        {t}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </motion.section>
-                ) : (
-                    <motion.section 
-                        key="results"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="w-full max-w-2xl px-0"
-                    >
-                        <div className="flex flex-col border-t border-black/5 pb-32">
-                            {results.map((song, index) => (
-                                <motion.article
-                                    key={song.youtubeId}
-                                    layout
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.03 }}
-                                    onClick={() => handleSelect(song)}
-                                    className="group relative flex items-center gap-5 py-4 border-b border-black/5 cursor-pointer transition-all hover:bg-black/5"
-                                >
-                                    {/* Small Thumbnail */}
-                                    <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-black/5">
-                                        <img src={song.thumbnail} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300" alt="" />
-                                    </div>
-
-                                    {/* Song Info (Stacked) */}
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className="text-[15px] font-bold text-black tracking-tight leading-snug truncate font-poppins">
-                                            {song.title}
-                                        </h4>
-                                        <p className="text-[11px] font-bold text-black/30 uppercase tracking-widest mt-0.5 font-poppins">
-                                            {song.author}
-                                        </p>
-                                    </div>
-
-                                    {/* Action Icon (Simple Arrow/Plus) */}
-                                    <div className="shrink-0 pr-4">
-                                        <div className="text-black/20 group-hover:text-orange-500 transition-colors">
-                                            {submitting === song.youtubeId ? (
-                                                <Loader2 size={16} className="animate-spin" />
-                                            ) : <Play size={14} fill="currentColor" className="opacity-0 group-hover:opacity-100 transition-opacity" />}
-                                        </div>
-                                    </div>
-                                </motion.article>
-                            ))}
-                        </div>
-
-                        {!loading && results.length === 0 && query.length > 0 && (
-                            <div className="flex flex-col items-center justify-center py-20 text-center opacity-20">
-                                <Music size={48} className="mb-4" />
-                                <p className="text-xs font-bold tracking-normal uppercase">No songs found</p>
-                            </div>
-                        )}
-                    </motion.section>
-                )}
-            </AnimatePresence>
-        </div>
-      </main>
-
-      {/* Modern Status Toast */}
-      <AnimatePresence>
-        {statusMsg ? (
-          <motion.div 
-             initial={{ opacity: 0, scale: 0.95 }}
-             animate={{ opacity: 1, scale: 1 }}
-             exit={{ opacity: 0, scale: 0.95 }}
-             className={`fixed bottom-12 left-1/2 -translate-x-1/2 px-8 py-4 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.2)] border font-bold text-[13px]  uppercase z-50 flex items-center gap-3 ${statusMsg.type === 'success' ? 'bg-[#1a101c] text-white border-white/10' : 'bg-red-500 text-white border-red-400'}`}
+      {/* MAIN CONTENT AREA */}
+      <AnimatePresence mode="wait">
+        {!isJoined ? (
+          <JoinFlow
+            passkey={passkey}
+            onPasskeyChange={handlePasskeyChange}
+            onSubmit={handleKeySubmit}
+            isResolving={isResolving}
+          />
+        ) : activeTab === "music" ? (
+          <motion.div
+            key="music-room"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            className="relative z-20 pt-32 px-6 w-full"
           >
-              <Radio size={14} className="animate-pulse" />
-              {statusMsg.text}
+            <MusicRoomView
+              roomId={roomId}
+              nowPlaying={nowPlaying}
+              queue={queue}
+              isPlaying={!!nowPlaying}
+              progress={0}
+              role="participant"
+            />
           </motion.div>
-        ) : null}
+        ) : (
+          <RequestFlow
+            query={query}
+            setQuery={setQuery}
+            isConfirmed={isConfirmed}
+            setIsConfirmed={setIsConfirmed}
+            suggestions={suggestions}
+            results={results}
+            loading={loading}
+            submitting={submitting}
+            onSelect={handleSelect}
+            vibes={vibes}
+          />
+        )}
       </AnimatePresence>
 
-      {/* Navigation Pivot - Music Room */}
-      <div className="fixed bottom-8 right-8 z-30">
-          <Link 
-            to="/r/$roomId" 
-            params={{ roomId }}
-            className="flex items-center gap-3 bg-[#1a101c] text-white px-6 py-3 rounded-full hover:bg-orange-500 transition-all shadow-2xl group"
+      <NowPlayingBar
+        nowPlaying={nowPlaying}
+        roomId={roomId}
+        isVisible={isJoined && !!nowPlaying && activeTab === "request"}
+      />
+
+      <AnimatePresence>
+        {statusMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9, y: -20 }}
+            className="fixed top-28 left-0 right-0 flex justify-center pointer-events-none z-100"
           >
-              <Music size={18} />
-              <span className="text-[12px] font-bold uppercase ">Live Room</span>
-          </Link>
-      </div>
+            <div
+              className={`pointer-events-auto flex items-center gap-6 px-8 py-6 rounded-[32px] border transition-all duration-500 min-w-[400px] ${
+                statusMsg?.type === "success"
+                  ? "bg-white border-green-500/20"
+                  : "bg-white border-red-500/20"
+              }`}
+            >
+              <div
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+                  statusMsg?.type === "success"
+                    ? "bg-green-500 text-white"
+                    : "bg-red-500 text-white"
+                }`}
+              >
+                {statusMsg?.type === "success" ? (
+                  <CheckCircle2 size={24} />
+                ) : (
+                  <AlertCircle size={24} />
+                )}
+              </div>
+              <div className="flex-1">
+                <p
+                  className={`text-xs font-bold uppercase tracking-[0.2em] mb-1 ${
+                    statusMsg?.type === "success"
+                      ? "text-green-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  {statusMsg?.type === "success" ? "Confirmed" : "Attention"}
+                </p>
+                <p className="text-base font-bold text-black/80 leading-tight tracking-tight">
+                  {statusMsg?.text}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isJoined && activeTab === "music" && !nowPlaying && (
+          <motion.section
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-30 bg-[#fdfdfc] flex flex-col items-center justify-center p-12 text-center"
+          >
+            <div className="max-w-xl space-y-12">
+              <div className="space-y-6">
+                <h2 className="text-8xl font-bebas tracking-tighter text-black leading-none uppercase">
+                  No music playing
+                </h2>
+                <p className="text-black/40 text-sm font-bold uppercase tracking-widest italic">
+                  Waiting for the admin to play a song
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveTab("request")}
+                className="px-12 h-16 bg-black text-white rounded-3xl text-xs font-bold uppercase tracking-widest hover:bg-orange-500 transition-all active:scale-95 flex items-center gap-2"
+              >
+                Add a song
+              </button>
+            </div>
+          </motion.section>
+        )}
+      </AnimatePresence>
+
+      <TransitionOverlay isVisible={isRevealing} />
     </div>
   );
 }

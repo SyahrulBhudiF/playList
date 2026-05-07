@@ -2,12 +2,16 @@ export type SongBasic = {
   id: string;
   youtubeId: string;
   title: string;
+  author?: string;
 };
 
 export type RoomState = {
   playbackControllerSocketId: string | null;
   nowPlaying: SongBasic | null;
   nextTrack: SongBasic | null;
+  isPlaying: boolean;
+  passkey: string | null;
+  queue: any[] | null;
 };
 
 class RoomManager {
@@ -19,9 +23,23 @@ class RoomManager {
         playbackControllerSocketId: null,
         nowPlaying: null,
         nextTrack: null,
+        isPlaying: false,
+        passkey: null,
+        queue: null,
       });
     }
     return this.rooms.get(roomId)!;
+  }
+
+  // --- QUEUE ---
+
+  public getQueue(roomId: string): any[] | null {
+    return this.getOrInitRoom(roomId).queue;
+  }
+
+  public setQueue(roomId: string, queue: any[]): void {
+    const room = this.getOrInitRoom(roomId);
+    room.queue = queue;
   }
 
   // --- PLAYBACK CONTROLLER ---
@@ -66,6 +84,24 @@ class RoomManager {
   public setNowPlaying(roomId: string, song: SongBasic | null): void {
     const room = this.getOrInitRoom(roomId);
     room.nowPlaying = song;
+  }
+
+  public setIsPlaying(roomId: string, playing: boolean): void {
+    const room = this.getOrInitRoom(roomId);
+    room.isPlaying = playing;
+  }
+
+  public getIsPlaying(roomId: string): boolean {
+    return this.getOrInitRoom(roomId).isPlaying;
+  }
+
+  public getPasskey(roomId: string): string | null {
+    return this.getOrInitRoom(roomId).passkey;
+  }
+
+  public setPasskey(roomId: string, passkey: string): void {
+    const room = this.getOrInitRoom(roomId);
+    room.passkey = passkey;
   }
 }
 

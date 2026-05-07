@@ -93,4 +93,17 @@ export function handleEOEvents(io: Server, socket: Socket) {
     }
   });
 
+  // EO toggles playback (Play/Pause)
+  socket.on("toggle_playback", (data: { roomId: string, isPlaying: boolean }) => {
+    const { roomId, isPlaying } = data;
+    if (!roomId) return;
+
+    // Check if authorized
+    const activeEO = roomManager.getPlaybackController(roomId);
+    if (activeEO && activeEO !== socket.id) return;
+
+    roomManager.setIsPlaying(roomId, isPlaying);
+    io.to(roomId).emit("playback_updated", { isPlaying });
+    console.log(`Playback for room ${roomId} set to: ${isPlaying}`);
+  });
 }

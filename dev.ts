@@ -3,6 +3,14 @@ import { spawn } from "bun";
 console.log("\n\x1b[36m%s\x1b[0m", "🎵 Starting PlayMusic Development Stack...");
 console.log("\x1b[2m%s\x1b[0m", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
+// Ensure Dependencies are running via Docker
+console.log("🐳 Starting database & cache via Docker Compose...");
+const docker = spawn(["docker", "compose", "up", "-d", "postgres", "redis"], {
+  stdout: "inherit",
+  stderr: "inherit",
+});
+await docker.exited;
+
 // Spawn Server
 const server = spawn(["bun", "run", "dev"], {
   cwd: "./server",
@@ -18,10 +26,18 @@ const client = spawn(["bun", "run", "dev"], {
 });
 
 // Handle cleanup on exit
-process.on("SIGINT", () => {
+process.on("SIGINT", async () => {
   console.log("\n👋 Shutting down...");
   server.kill();
   client.kill();
+  
+  console.log("🐳 Stopping Docker containers...");
+  const dockerStop = spawn(["docker", "compose", "stop", "postgres", "redis"], {
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  await dockerStop.exited;
+  
   process.exit();
 });
 

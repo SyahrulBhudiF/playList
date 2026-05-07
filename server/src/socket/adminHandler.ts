@@ -1,5 +1,7 @@
 import { Server, Socket } from "socket.io";
 import { sql } from "../db/client";
+import { roomManager } from "../state/roomManager";
+import { redisCache } from "../lib/redis";
 
 export function handleAdminEvents(io: Server, socket: Socket) {
   
@@ -28,10 +30,22 @@ export function handleAdminEvents(io: Server, socket: Socket) {
 
       const updatedSong = result[0];
 
-      // 2. Broadcast updated queue to everyone in the room except regular participants? 
-      // Actually, EO needs to know a new song was approved so it can fetch it if its queue was empty!
-      // But we can trigger EO directly or just let EO listen to `queue_added`.
-      io.to(roomId).emit("song_approved", updatedSong); // EO and Admins can listen to this
+      // 2. Sync with Memory Cache (roomManager)
+      const currentQueue = roomManager.getQueue(roomId) || [];
+      const updatedQueue = currentQueue.map(s => s.id === songId ? updatedSong : s);
+      roomManager.setQueue(roomId, updatedQueue);
+
+      // 3. Broadcast targeted updates
+      // Full queue for admins (so they see pending/approved)
+      io.to(`${roomId}:admin`).emit("queue_updated", updatedQueue); 
+      
+      // Filtered queue for participants and the Music Player (EO)
+      const approvedOnly = updatedQueue.filter(q => q.status === 'approved');
+      io.to(`${roomId}:participant`).emit("queue_updated", approvedOnly);
+      io.to(`${roomId}:eo`).emit("queue_updated", approvedOnly);
+      
+      // Also notify admins specifically to clear their pending item
+      io.to(`${roomId}:admin`).emit("song_approved", updatedSong); 
 
       if (callback) callback({ success: true, message: "Song approved" });
     } catch (err) {
@@ -98,6 +112,61 @@ export function handleAdminEvents(io: Server, socket: Socket) {
     } catch (err) {
       console.error(err);
       if (callback) callback({ success: false, error: "Database error" });
+    }
+  });
+  
+
+
+  // Create a new station (room)
+  socket.on("create_station", async (data: { roomId: string; adminToken: string }, callback) => {
+    const { roomId, adminToken } = data;
+    if (!roomId || !adminToken) return callback?.({ success: false, error: "Missing fields" });
+
+    try {
+      const adminId = await redisCache.client.get(`admin_session:${adminToken}`);
+      if (!adminId) return callback?.({ success: false, error: "Unauthorized" });
+
+      // Check if room exists
+      const existing = await sql`SELECT id FROM rooms WHERE id = ${roomId}`;
+      if (existing.length > 0) return callback?.({ success: false, error: "Station ID already in use" });
+
+      const generatedKey = Math.floor(10000 + Math.random() * 90000).toString();
+      
+      await sql`
+        INSERT INTO rooms (id, passkey, owner_id) 
+        VALUES (${roomId}, ${generatedKey}, ${adminId})
+      `;
+
+      await redisCache.setRoomKey(roomId, generatedKey);
+      roomManager.setPasskey(roomId, generatedKey);
+
+      if (callback) callback({ success: true, roomId, passkey: generatedKey });
+    } catch (err) {
+      console.error(err);
+      if (callback) callback({ success: false, error: "Internal server error" });
+    }
+  });
+
+  // Get my stations
+  socket.on("get_my_stations", async (data: { adminToken: string }, callback) => {
+    const { adminToken } = data;
+    if (!adminToken) return callback?.({ success: false, error: "Missing token" });
+
+    try {
+      const adminId = await redisCache.client.get(`admin_session:${adminToken}`);
+      if (!adminId) return callback?.({ success: false, error: "Unauthorized" });
+
+      const rooms = await sql`
+        SELECT id, passkey, created_at as "createdAt"
+        FROM rooms 
+        WHERE owner_id = ${adminId}
+        ORDER BY created_at DESC
+      `;
+
+      if (callback) callback({ success: true, stations: rooms });
+    } catch (err) {
+      console.error(err);
+      if (callback) callback({ success: false, error: "Internal server error" });
     }
   });
 

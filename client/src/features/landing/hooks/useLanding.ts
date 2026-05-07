@@ -11,9 +11,9 @@ export const useLanding = () => {
 
   const handleVinylClick = useCallback(() => {
     localStorage.setItem('has_visited_play_music', 'true');
-    navigate({ 
+    navigate({
       to: '/r/$roomId/request',
-      params: { roomId: 'test-hackathon-room' }
+      params: { roomId: 'join' }
     });
   }, [navigate]);
 

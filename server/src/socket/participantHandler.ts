@@ -2,6 +2,8 @@ import { Server, Socket } from "socket.io";
 import { sql } from "../db/client";
 import ytsort from "yt-search";
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 // Simple in-memory cache for search results (5 minute TTL)
 const searchCache = new Map<string, { results: any[], expires: number }>();
 const CACHE_TTL = 5 * 60 * 1000; 
@@ -23,8 +25,9 @@ export function handleParticipantEvents(io: Server, socket: Socket) {
     }
 
     try {
-      console.log(`Searching YouTube via yt-search for: "${query}"`);
-      const r = await ytsort(query);
+      const refinedQuery = `${query} official audio`;
+      console.log(`Searching YouTube via yt-search for: "${refinedQuery}"`);
+      const r = await ytsort(refinedQuery);
       
       const tracks = r.videos.slice(0, 15).map((item: any) => ({
         id: item.videoId,
@@ -54,6 +57,28 @@ export function handleParticipantEvents(io: Server, socket: Socket) {
     }
   });
 
+  // Get fast search suggestions (YouTube Autocomplete)
+  socket.on("get_search_suggestions", async (data: { query: string }, callback) => {
+    const { query } = data;
+    if (!query || query.length < 2) return;
+
+    try {
+      const url = `http://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q=${encodeURIComponent(query)}`;
+      const response = await fetch(url);
+      const text = await response.text();
+      
+      // YouTube returns a weird JSON-ish format: window.google.ac.h(["query",[["suggestion1",0],["suggestion2",0],...]])
+      // But with client=youtube it's usually: ["query",["suggestion1","suggestion2",...]]
+      const json = JSON.parse(text.replace(/^[^(]*\(|\)[^)]*$/g, ''));
+      const rawSuggestions = json[1] || [];
+      const suggestions = rawSuggestions.map((item: any) => Array.isArray(item) ? item[0] : item);
+      
+      callback({ success: true, suggestions });
+    } catch (err) {
+      callback({ success: false, suggestions: [] });
+    }
+  });
+
   // Submit song request
   socket.on("submit_song", async (data: { roomId: string; youtubeId: string; title: string; author: string; userId: string }, callback) => {
     const { roomId, youtubeId, title, author, userId } = data;
@@ -72,6 +97,7 @@ export function handleParticipantEvents(io: Server, socket: Socket) {
       `;
 
       const newSong = result[0];
+      console.log(`[QUEUE] New song submitted for room ${roomId}: ${newSong.title}`);
 
       // 3. Emit only to Admins in this room
       io.to(`${roomId}:admin`).emit("new_pending_song", newSong);

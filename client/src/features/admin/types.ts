@@ -10,6 +10,7 @@ export interface PlaybackControllerProps {
   activePlayer: 'A' | 'B';
   onPlayerReady: (id: 'A' | 'B') => YouTubeProps['onReady'];
   onPlayerEnd: () => void;
+  togglePlayback: (isPlaying: boolean) => void;
 }
 
 export interface ModerationQueueProps {
@@ -28,6 +29,9 @@ export interface ModerationQueueProps {
 export interface DashboardHeaderProps {
   roomId: string;
   connected: boolean;
+  tabs: { id: string; label: string; icon: string }[];
+  activeTab: string;
+  setActiveTab: (id: string) => void;
 }
 
 export interface SongSearchProps {
@@ -35,6 +39,8 @@ export interface SongSearchProps {
   setSearchQuery: (q: string) => void;
   searchLoading: boolean;
   searchResults: SearchResult[];
+  suggestions: string[];
+  onSelectSuggestion: (s: string) => void;
   handleAddSong: (song: SearchResult) => void;
   submittingId: string | null;
 }

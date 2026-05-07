@@ -18,7 +18,6 @@ const FullScreenVinyl: React.FC<{ isSpinning: boolean }> = ({ isSpinning }) => {
             <stop offset="100%" stopColor="#050505" />
           </radialGradient>
 
-          {/* Atmospheric Fade Ripple Mask */}
           <mask id="rippleMask">
              <motion.circle 
                cx="500" cy="500" 
@@ -29,12 +28,10 @@ const FullScreenVinyl: React.FC<{ isSpinning: boolean }> = ({ isSpinning }) => {
              />
           </mask>
 
-          {/* Mask Softener Filter */}
           <filter id="softFade">
             <feGaussianBlur in="SourceGraphic" stdDeviation="60" />
           </filter>
 
-          {/* Realistic Rotating Shine */}
           <linearGradient id="vinylShine" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="white" stopOpacity="0" />
             <stop offset="48%" stopColor="white" stopOpacity="0.08" />
@@ -44,17 +41,14 @@ const FullScreenVinyl: React.FC<{ isSpinning: boolean }> = ({ isSpinning }) => {
           </linearGradient>
         </defs>
 
-        {/* The Base Plate */}
         <circle cx="500" cy="500" r="500" fill="url(#vinylDepth)" />
 
-        {/* The Grooves - Spaced out more for realism */}
         <g stroke="rgba(255,77,0,0.12)" fill="none" strokeWidth="0.8">
           {Array.from({ length: 40 }).map((_, i) => (
             <circle key={i} cx="500" cy="500" r={60 + i * 18} />
           ))}
         </g>
 
-        {/* The Sequential Fade Layer (Subtle Breathing) */}
         <g mask="url(#rippleMask)" filter="url(#softFade)">
            <g stroke="rgba(255,77,0,0.15)" fill="none" strokeWidth="1.2">
               {Array.from({ length: 40 }).map((_, i) => (
@@ -63,7 +57,6 @@ const FullScreenVinyl: React.FC<{ isSpinning: boolean }> = ({ isSpinning }) => {
            </g>
         </g>
 
-        {/* Realistic Rotating Shine Reflection - Very Slow */}
         <motion.g
           animate={{ rotate: isSpinning ? 360 : 0 }}
           transition={{ repeat: Infinity, duration: 60, ease: "linear" }}
@@ -85,17 +78,14 @@ export const Hero: React.FC = () => {
       className="relative min-h-screen w-full bg-[#050505] flex items-center justify-center overflow-hidden"
       id="hero"
     >
-      {/* Immersive SVG Vinyl Background */}
       <FullScreenVinyl isSpinning={heroState.isSpinning} />
 
-      {/* Global Beat Pulse Layer */}
       <motion.div 
         animate={{ scale: [1, 1.005, 1], opacity: [0.8, 1, 0.8] }} 
         transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
         className="absolute inset-0 z-1 pointer-events-none bg-black/10"
       />
 
-      {/* Corners UI - Enhanced Readability */}
       <div className="absolute inset-0 p-10 md:p-16 flex flex-col justify-between pointer-events-none z-30">
         <div className="flex justify-between items-start">
           <motion.div 
@@ -106,7 +96,6 @@ export const Hero: React.FC = () => {
             SHARE YOUR MUSIC
             <div className="w-10 h-[2px] bg-orange-500 mt-5 shadow-[0_0_20px_rgba(249,115,22,1)]"></div>
           </motion.div>
-          {/* Hamburger Menu Removed */}
           <div /> 
         </div>
 
@@ -119,11 +108,9 @@ export const Hero: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Composition - Mathematically Centered Grid */}
       <div className="relative z-20 w-full h-full flex items-center justify-center">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center w-full max-w-[100vw] gap-8 md:gap-16 px-4 md:px-0">
           
-          {/* Left Side (PLAY) */}
           <div className="flex justify-end overflow-visible">
             <motion.h1 
               initial={{ opacity: 0, x: -50 }}
@@ -135,7 +122,6 @@ export const Hero: React.FC = () => {
             </motion.h1>
           </div>
 
-          {/* Exact Center (Logo) */}
           <div className="relative flex items-center justify-center shrink-0 z-40">
               <motion.div 
                  animate={{ scale: [1, 1.05, 1], opacity: [0.02, 0.05, 0.02] }}
@@ -149,7 +135,6 @@ export const Hero: React.FC = () => {
                  onClick={handleVinylClick}
                  className="relative cursor-pointer w-24 h-24 md:w-56 md:h-56 bg-linear-to-br from-orange-300 via-orange-400 to-orange-500 rounded-full flex items-center justify-center shadow-[0_20px_60px_rgba(0,0,0,0.8)] border border-white/5 transition-all duration-500 will-change-transform overflow-hidden group"
               >
-                  {/* Logo Centerpiece - Minimal Depth */}
                   <div className="relative w-1/2 h-1/2 ml-[8%] flex items-center justify-center z-10">
                      <img 
                         src={logo} 
@@ -160,7 +145,6 @@ export const Hero: React.FC = () => {
               </motion.div>
           </div>
 
-          {/* Right Side (LIST) */}
           <div className="flex justify-start overflow-visible">
             <motion.h1 
               initial={{ opacity: 0, x: 50 }}

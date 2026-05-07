@@ -6,6 +6,7 @@ import { handleConnection } from "./src/socket/connectionHandler";
 import { handleParticipantEvents } from "./src/socket/participantHandler";
 import { handleAdminEvents } from "./src/socket/adminHandler";
 import { handleEOEvents } from "./src/socket/eoHandler";
+import { handleAuthEvents } from "./src/socket/authHandler";
 
 // Verify environment before starting
 if (!process.env.DATABASE_URL) {
@@ -24,6 +25,7 @@ io.on("connection", (socket) => {
   handleConnection(io, socket);
 
   // 2. Role-specific logic
+  handleAuthEvents(io, socket);
   handleParticipantEvents(io, socket);
   handleAdminEvents(io, socket);
   handleEOEvents(io, socket);

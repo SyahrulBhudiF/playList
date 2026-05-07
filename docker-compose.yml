@@ -1,0 +1,61 @@
+services:
+  # Local Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: playmusic_db
+    restart: always
+    environment:
+      POSTGRES_USER: playmusic
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: playmusic
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # High-speed caching for room codes
+  redis:
+    image: redis:7-alpine
+    container_name: playmusic_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # Bun Backend Server
+  server:
+    build: 
+      context: ./server
+    container_name: playmusic_server
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://playmusic:password@postgres:5432/playmusic?sslmode=disable
+      REDIS_URL: redis://redis:6379
+      ADMIN_INVITE_CODE: PLAY-ADMIN-2026
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+
+  # Vite Frontend Client
+  client:
+    build: 
+      context: ./client
+    container_name: playmusic_client
+    restart: always
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    depends_on:
+      - server
+
+volumes:
+  postgres_data:
+  redis_data:

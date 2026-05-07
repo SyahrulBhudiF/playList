@@ -6,7 +6,6 @@ import {
   createRouter,
   createRoute,
   createRootRoute,
-  redirect,
 } from '@tanstack/react-router'
 import './index.css'
 
@@ -18,6 +17,8 @@ import { LandingPage } from './pages/LandingPage'
 import { ParticipantPage } from './pages/ParticipantPage'
 import { MusicRoom } from './pages/MusicRoom'
 import { AdminDashboardPage } from './pages/AdminDashboardPage'
+import { AdminLoginPage } from './pages/AdminLoginPage'
+import { AdminHubPage } from './pages/AdminHubPage'
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -54,7 +55,19 @@ const participantIndexRoute = createRoute({
 
 
 // --- ADMIN ROUTES ---
-const adminBaseRoute = createRoute({
+const adminLoginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/login',
+  component: AdminLoginPage,
+})
+
+const adminHubRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin',
+  component: AdminHubPage,
+})
+
+const adminRoomRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/$roomId',
   component: AdminDashboardPage,
@@ -63,7 +76,9 @@ const adminBaseRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute, 
   participantBaseRoute.addChildren([participantIndexRoute, participantRequestRoute]),
-  adminBaseRoute
+  adminLoginRoute,
+  adminHubRoute,
+  adminRoomRoute
 ])
 
 const router = createRouter({ routeTree })

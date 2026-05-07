@@ -1,139 +1,168 @@
-import { motion } from 'framer-motion';
-import { SkipBack, SkipForward } from 'lucide-react';
-
-// Assets
-import playIcon from '@/assets/PLay.svg';
-import pauseIcon from '@/assets/Pause.svg';
-import logo from '@/assets/logo.svg';
+import { motion } from "framer-motion";
+import playIcon from "@/assets/PLay.svg";
+import pauseIcon from "@/assets/Pause.svg";
+import logo from "@/assets/logo.svg";
 
 interface TurntableProps {
-    isPlaying: boolean;
-    onToggle?: () => void;
-    progress: number;
-    scale?: number;
-    accentColor?: string;
+  isPlaying: boolean;
+  onToggle?: () => void;
+  progress: number;
+  thumbnail?: string | null;
 }
 
-export const Turntable = ({ 
-    isPlaying, 
-    onToggle, 
-    progress 
+export const Turntable = ({
+  isPlaying,
+  onToggle,
+  progress,
+  thumbnail,
 }: TurntableProps) => {
-    return (
-        <figure className="relative w-full aspect-square max-w-[550px] flex items-center justify-center p-10">
-            
-            {/* ATMOSPHERIC RADIANCE */}
-            <div className={`absolute inset-0 bg-[radial-gradient(circle,rgba(249,115,22,0.06)_0%,transparent_75%)] blur-[100px]`} />
+  const accentColor = isPlaying ? "rgba(249,115,22,1)" : "rgba(0,0,0,0.2)";
+  const glowColor = isPlaying ? "rgba(249,115,22,0.1)" : "rgba(0,0,0,0.03)";
 
-            {/* PROGRESS RING (OUTER) */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <svg className="w-[90%] h-[90%] -rotate-90">
-                    <circle cx="50%" cy="50%" r="49%" fill="none" stroke="rgba(0,0,0,0.03)" strokeWidth="1" />
-                    <motion.circle
-                        cx="50%" cy="50%" r="49%" fill="none"
-                        stroke="rgba(249,115,22,1)"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        initial={{ pathLength: 0 }}
-                        animate={{ pathLength: progress }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                    />
-                </svg>
-            </div>
+  return (
+    <figure className="relative w-full aspect-square max-w-[1200px] flex items-center justify-center p-0">
+      {/* ATMOSPHERIC RADIANCE */}
+      <div
+        className="absolute inset-0 transition-colors duration-1000 blur-[100px]"
+        style={{
+          background: `radial-gradient(circle, ${glowColor} 0%, transparent 75%)`,
+        }}
+      />
 
-            {/* MINIMAL SKETCH OUTLINES */}
-            <div className="absolute inset-0 flex items-center justify-center">
-                {[0, 15, 30].map((inset) => (
-                    <div 
-                        key={inset}
-                        className={`absolute rounded-full border border-orange-500/50 transition-all duration-1000 ${isPlaying ? 'scale-105' : 'scale-100'}`}
-                        style={{ inset: `${inset}%` }} 
-                    />
-                ))}
-            </div>
-            
-            {/* THE SCHEMATIC VINYL DISC (SPINNING LAYER) */}
-            <motion.div 
-                animate={{ rotate: isPlaying ? 360 : 0 }}
-                transition={{ duration: 40, repeat: isPlaying ? Infinity : 0, ease: "linear" }}
-                className="relative w-[82%] h-[82%] rounded-full flex items-center justify-center bg-white border-2 border-orange-500/50 overflow-hidden shadow-xl shadow-orange-500/10 will-change-transform"
+      {/* PROGRESS RING (OUTER) */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <svg className="w-full h-full -rotate-90">
+          <circle
+            cx="50%"
+            cy="50%"
+            r="49%"
+            fill="none"
+            stroke="rgba(0,0,0,0.02)"
+            strokeWidth="1"
+          />
+          <motion.circle
+            cx="50%"
+            cy="50%"
+            r="49%"
+            fill="none"
+            stroke={accentColor}
+            strokeWidth="3"
+            strokeLinecap="round"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: progress }}
+            transition={{ duration: 1, ease: "easeOut" }}
+          />
+        </svg>
+      </div>
+
+      {/* MINIMAL SKETCH OUTLINES */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        {[0, 15, 30].map((inset) => (
+          <div
+            key={inset}
+            className={`absolute rounded-full border transition-all duration-1000 ${isPlaying ? "scale-105 border-orange-500/20" : "scale-100 border-black/5"}`}
+            style={{ inset: `${inset}%` }}
+          />
+        ))}
+      </div>
+
+      {/* THE SCHEMATIC VINYL DISC (SPINNING LAYER) */}
+      <motion.div
+        animate={{ rotate: isPlaying ? 360 : 0 }}
+        transition={{
+          duration: 4,
+          repeat: isPlaying ? Infinity : 0,
+          ease: "linear",
+        }}
+        className={`relative w-[98%] h-[98%] rounded-full flex items-center justify-center bg-white border transition-colors duration-1000 ${isPlaying ? "border-orange-500/30 shadow-orange-500/10" : "border-black/10 shadow-black/5"} overflow-hidden shadow-2xl will-change-transform`}
+      >
+        {/* THUMBNAIL INTEGRATION */}
+        {thumbnail && (
+          <img
+            src={thumbnail}
+            alt="Disc Art"
+            className={`absolute inset-0 w-full h-full object-cover opacity-10 transition-opacity duration-1000 ${isPlaying ? "opacity-20" : "opacity-5 grayscale"}`}
+          />
+        )}
+
+        {/* GROOVE TEXTURES */}
+        <svg className="absolute inset-0 w-full h-full opacity-60">
+          {Array.from({ length: 45 }).map((_, i) => (
+            <circle
+              key={i}
+              cx="50%"
+              cy="50%"
+              r={`${4 + i * 1.05}%`}
+              fill="none"
+              stroke={isPlaying ? "rgba(249,115,22,0.3)" : "rgba(0,0,0,0.05)"}
+              strokeWidth="1"
+            />
+          ))}
+        </svg>
+
+        {/* TECHNICAL REFRACTION */}
+        <div
+          className={`absolute inset-0 transition-colors duration-1000 ${isPlaying ? "bg-[conic-gradient(from_0deg,transparent_0%,rgba(249,115,22,0.05)_25%,transparent_50%,rgba(249,115,22,0.05)_75%,transparent_100%)]" : "bg-[conic-gradient(from_0deg,transparent_0%,rgba(0,0,0,0.02)_25%,transparent_50%,rgba(0,0,0,0.02)_75%,transparent_100%)]"}`}
+        />
+      </motion.div>
+
+      {/* CENTER LABEL HUB (STATIONARY) - clickable for play/pause */}
+      <button
+        onClick={onToggle}
+        disabled={!onToggle}
+        className={`absolute z-20 w-[28%] h-[28%] rounded-full flex items-center justify-center bg-white border transition-colors duration-1000 ${isPlaying ? "border-orange-500/30" : "border-black/10"} shadow-xl shadow-black/5 ${onToggle ? "cursor-pointer hover:scale-105 active:scale-95" : "cursor-default"} transition-transform`}
+      >
+        <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center">
+          {isPlaying ? (
+            <img
+              src={pauseIcon}
+              alt="Pause"
+              className="relative w-8 h-8 opacity-40 transition-all duration-1000"
+            />
+          ) : (
+            <img
+              src={playIcon}
+              alt="Play"
+              className="relative w-8 h-8 opacity-40 translate-x-1 grayscale transition-all duration-1000"
+            />
+          )}
+        </div>
+
+        <div
+          className={`absolute -top-10 w-5 h-5 z-40 transition-opacity duration-1000 ${isPlaying ? "opacity-40" : "opacity-10"}`}
+        >
+          <img
+            src={logo}
+            alt="Logo"
+            className="relative w-full h-full grayscale"
+          />
+        </div>
+      </button>
+
+      {/* NEEDLE ASSEMBLY */}
+      <div className="absolute -top-20 right-[-280px] w-1/2 h-full pointer-events-none z-30 flex justify-end p-24 origin-top-right">
+        <div
+          className={`relative w-14 h-14 rounded-full border bg-white flex items-center justify-center z-50 shadow-sm transition-colors duration-1000 ${isPlaying ? "border-orange-500/30" : "border-black/10"}`}
+        >
+          <div
+            className={`w-2 h-2 rounded-full transition-colors duration-1000 ${isPlaying ? "bg-orange-500/40" : "bg-black/20"}`}
+          />
+          <motion.div
+            initial={false}
+            animate={{ rotate: isPlaying ? -15 : -35 }}
+            transition={{ type: "spring", stiffness: 40, damping: 20 }}
+            className={`absolute top-1/2 left-1/2 w-px h-[320px] transition-colors duration-1000 origin-top ${isPlaying ? "bg-orange-500/30" : "bg-black/10"}`}
+          >
+            <div
+              className={`w-10 h-10 border rounded-sm absolute -bottom-10 -left-5 bg-white flex items-center justify-center shadow-md transition-colors duration-1000 ${isPlaying ? "border-orange-500/30" : "border-black/10"}`}
             >
-                {/* GROOVE TEXTURES */}
-                <svg className="absolute inset-0 w-full h-full opacity-100">
-                    {Array.from({ length: 45 }).map((_, i) => (
-                        <circle 
-                            key={i} 
-                            cx="50%" cy="50%" 
-                            r={`${4 + i * 1.05}%`} 
-                            fill="none" 
-                            stroke="rgba(249,115,22,0.5)" 
-                            strokeWidth="1.2" 
-                        />
-                    ))}
-                </svg>
-                
-                {/* TECHNICAL ORANGE REFRACTION */}
-                <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent_0%,rgba(249,115,22,0.1)_25%,transparent_50%,rgba(249,115,22,0.1)_75%,transparent_100%)]" />
-            </motion.div>
-
-            {/* CENTER LABEL HUB (STATIONARY) */}
-            <div className="absolute z-20 w-[28%] h-[28%] rounded-full flex items-center justify-center bg-white border-2 border-orange-500/50 shadow-2xl shadow-orange-500/10">
-                {onToggle ? (
-                    <button 
-                        onClick={onToggle}
-                        className="relative z-30 w-full h-full flex items-center justify-center active:scale-95 transition-transform group"
-                    >
-                        <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center">
-                            {isPlaying ? (
-                                <img src={pauseIcon} alt="Pause" className="relative w-full h-full opacity-100 transition-opacity contrast-125" />
-                            ) : (
-                                <img src={playIcon} alt="Play" className="relative w-full h-full opacity-100 translate-x-1.5 transition-opacity contrast-125" />
-                            )}
-                        </div>
-                    </button>
-                ) : (
-                    <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center">
-                         {isPlaying ? (
-                            <img src={pauseIcon} alt="Pause" className="relative w-full h-full opacity-100 contrast-125" />
-                        ) : (
-                            <img src={playIcon} alt="Play" className="relative w-full h-full opacity-100 translate-x-1.5 contrast-125" />
-                        )}
-                    </div>
-                )}
-                
-                <div className="absolute -top-10 w-5 h-5 z-40 opacity-80">
-                    <img src={logo} alt="Logo" className="relative w-full h-full" />
-                </div>
+              <div
+                className={`w-px h-8 rounded-full transition-colors duration-1000 ${isPlaying ? "bg-orange-500/40" : "bg-black/20"}`}
+              />
             </div>
-
-            {/* NEEDLE ASSEMBLY */}
-            <div className="absolute -top-20 right-[-80px] w-1/2 h-full pointer-events-none z-30 flex justify-end p-24 origin-top-right">
-                <div className="relative w-14 h-14 rounded-full border border-orange-500/50 bg-white flex items-center justify-center z-50 shadow-sm shadow-orange-500/20">
-                    <div className="w-2 h-2 bg-orange-500/60 rounded-full" />
-                    <motion.div 
-                        initial={false}
-                        animate={{ rotate: isPlaying ? 5 : -25 }}
-                        transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute top-1/2 left-1/2 w-px h-[320px] bg-orange-500/60 origin-top"
-                    >
-                        <div className="w-10 h-10 border border-orange-500/60 rounded-sm absolute -bottom-10 -left-5 bg-white flex items-center justify-center shadow-md">
-                            <div className="w-px h-8 bg-orange-500/90 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
-                        </div>
-                    </motion.div>
-                </div>
-            </div>
-
-            {/* TRANSPORT CONTROLS */}
-            <div className="absolute -left-36 top-1/2 -translate-y-1/2 z-40">
-                <button className="w-16 h-16 flex items-center justify-center text-black/80 hover:text-black transition-all">
-                    <SkipBack size={48} strokeWidth={1} />
-                </button>
-            </div>
-            <div className="absolute -right-36 top-1/2 -translate-y-1/2 z-40">
-                <button className="w-16 h-16 flex items-center justify-center text-black/80 hover:text-black transition-all">
-                    <SkipForward size={48} strokeWidth={1} />
-                </button>
-            </div>
-        </figure>
-    );
+          </motion.div>
+        </div>
+      </div>
+    </figure>
+  );
 };
