@@ -134,6 +134,63 @@ export function handleAdminEvents(io: Server, socket: Socket) {
   
 
 
+  // Admin adds song directly to queue (no approval needed)
+  socket.on("admin_add_song", async (data: { roomId: string; youtubeId: string; title: string; author: string; adminToken: string }, callback) => {
+    const { roomId, youtubeId, title, author, adminToken } = data;
+
+    if (!roomId || !youtubeId || !title || !adminToken) {
+      if (callback) callback({ success: false, error: "Missing fields" });
+      return;
+    }
+
+    try {
+      // Verify admin authorization
+      const adminId = await redisCache.client.get(`admin_session:${adminToken}`);
+      if (!adminId) {
+        if (callback) callback({ success: false, error: "Unauthorized" });
+        return;
+      }
+
+      // Insert with approved status so it goes straight to queue
+      const result = await sql`
+        INSERT INTO songs (room_id, youtube_id, title, author, submitted_by, status, approved_at)
+        VALUES (${roomId}, ${youtubeId}, ${title}, ${author || ""}, ${adminId}, 'approved', NOW())
+        RETURNING id, youtube_id as "youtubeId", title, author, status, submitted_by as "submittedBy", created_at as "createdAt"
+      `;
+
+      const newSong = result[0];
+      if (!newSong) {
+        if (callback) callback({ success: false, error: "Failed to create song" });
+        return;
+      }
+
+      console.log(`[ADMIN] Song directly added to queue for room ${roomId}: ${newSong.title}`);
+
+      // Refresh and broadcast queue to all roles
+      const queueRows = await sql`
+        SELECT id, youtube_id as "youtubeId", title, author, status, submitted_by as "submittedBy", created_at as "createdAt"
+        FROM songs
+        WHERE room_id = ${roomId} AND status IN ('pending', 'approved')
+        ORDER BY approved_at ASC NULLS LAST, created_at ASC
+      `;
+      const updatedQueue = [...queueRows];
+
+      io.to(`${roomId}:admin`).emit("queue_updated", updatedQueue);
+
+      const approvedOnly = updatedQueue.filter((q: any) => q.status === 'approved');
+      io.to(`${roomId}:participant`).emit("queue_updated", approvedOnly);
+      io.to(`${roomId}:eo`).emit("queue_updated", approvedOnly);
+
+      // Also trigger song_approved so pending queue UI updates
+      io.to(`${roomId}:admin`).emit("song_approved", newSong);
+
+      if (callback) callback({ success: true, song: newSong });
+    } catch (err) {
+      console.error(err);
+      if (callback) callback({ success: false, error: "Database error" });
+    }
+  });
+
   // Create a new station (room)
   socket.on("create_station", async (data: { roomId: string; adminToken: string }, callback) => {
     const { roomId, adminToken } = data;

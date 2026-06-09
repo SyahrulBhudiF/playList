@@ -11,6 +11,8 @@ export interface PlaybackControllerProps {
   activePlayer: 'A' | 'B';
   onPlayerReady: (id: 'A' | 'B') => NonNullable<YouTubeProps['onReady']>;
   onPlayerEnd: () => void;
+  onPrevious: () => void;
+  onGoToSearch: () => void;
   togglePlayback: (isPlaying: boolean) => void;
 }
 

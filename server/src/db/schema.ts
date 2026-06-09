@@ -69,6 +69,16 @@ export async function setupDatabase() {
       END $$;
     `;
 
+    // Migration: Add done_at column for previous-track support
+    await sql`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='songs' AND column_name='done_at') THEN
+          ALTER TABLE songs ADD COLUMN done_at TIMESTAMP WITH TIME ZONE;
+        END IF;
+      END $$;
+    `;
+
     // Create an index for faster queue pulling (orderBy approved_at ASC)
     console.log("  - Ensuring 'songs_queue_idx' exists...");
     await sql`

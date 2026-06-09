@@ -97,7 +97,11 @@ export function handleParticipantEvents(io: Server, socket: Socket) {
       `;
 
       const newSong = result[0];
-      console.log(`[QUEUE] New song submitted for room ${roomId}: ${newSong.title}`);
+      if (!newSong) {
+        if (callback) callback({ success: false, error: "Failed to create song" });
+        return;
+      }
+      console.log(`[QUEUE] New song submitted for room ${roomId}: ${(newSong as any).title}`);
 
       // 3. Emit only to Admins in this room
       io.to(`${roomId}:admin`).emit("new_pending_song", newSong);

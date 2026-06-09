@@ -23,6 +23,8 @@ export function PlaybackController({
   activePlayer,
   onPlayerReady,
   onPlayerEnd,
+  onPrevious,
+  onGoToSearch,
   togglePlayback,
 }: PlaybackControllerProps) {
   const { isPlaying, setIsPlaying, progress, setProgress } = usePlayback(nowPlaying);
@@ -52,14 +54,8 @@ export function PlaybackController({
           setDuration(dur);
           setProgress(ct / dur);
           
-          // Sync to participants with the REAL isPlaying state from YouTube
-          const actualPlaying = ref.getPlayerState() === 1;
-          socket.emit('sync_playback', { roomId, currentTime: ct, duration: dur, isPlaying: actualPlaying });
-          // If the player state doesn't match our local isPlaying, sync it
-          if (actualPlaying !== isPlayingRef.current) {
-            setIsPlaying(actualPlaying);
-            togglePlayback(actualPlaying);
-          }
+          // Sync timing only — isPlaying comes from YouTube onPlay/onPause events
+          socket.emit('sync_playback', { roomId, currentTime: ct, duration: dur, isPlaying: isPlayingRef.current });
         }
       } catch {
         // Player not ready yet
@@ -113,7 +109,7 @@ export function PlaybackController({
           {nowPlaying && activePlayer === 'A' ? (
             <YouTube
               videoId={nowPlaying.youtubeId}
-              opts={{ playerVars: { autoplay: 1, controls: 0 } }}
+              opts={{ playerVars: { autoplay: 1, controls: 0, origin: window.location.origin } }}
               onReady={(e) => {
                 playerRefA.current = e.target as unknown as PlayerRef;
                 onPlayerReady('A')(e);
@@ -128,7 +124,7 @@ export function PlaybackController({
           {nowPlaying && activePlayer === 'B' ? (
             <YouTube
               videoId={nowPlaying.youtubeId}
-              opts={{ playerVars: { autoplay: 1, controls: 0 } }}
+              opts={{ playerVars: { autoplay: 1, controls: 0, origin: window.location.origin } }}
               onReady={(e) => {
                 playerRefB.current = e.target as unknown as PlayerRef;
                 onPlayerReady('B')(e);
@@ -142,7 +138,7 @@ export function PlaybackController({
         {upNext ? (
           <YouTube
             videoId={upNext.youtubeId}
-            opts={{ playerVars: { autoplay: 0 } }}
+            opts={{ playerVars: { autoplay: 0, origin: window.location.origin } }}
             onReady={onPlayerReady(activePlayer === 'A' ? 'B' : 'A')}
           />
         ) : null}
@@ -158,7 +154,9 @@ export function PlaybackController({
         duration={duration}
         role="admin"
         onSkip={onPlayerEnd}
+        onPrevious={onPrevious}
         onTogglePlay={handleTogglePlay}
+        onGoToSearch={onGoToSearch}
       />
 
       {/* Removed restrictive spinner overlay to allow interaction with dashboard tabs */}

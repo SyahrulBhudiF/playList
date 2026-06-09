@@ -16,7 +16,9 @@ interface MusicRoomViewProps {
   duration?: number;
   role: 'admin' | 'participant';
   onSkip?: () => void;
+  onPrevious?: () => void;
   onTogglePlay?: () => void;
+  onGoToSearch?: () => void;
 }
 
 export function MusicRoomView({
@@ -29,7 +31,9 @@ export function MusicRoomView({
   duration = 0,
   role,
   onSkip,
-  onTogglePlay
+  onPrevious,
+  onTogglePlay,
+  onGoToSearch
 }: MusicRoomViewProps) {
   const isAdmin = role === 'admin';
 
@@ -122,8 +126,8 @@ export function MusicRoomView({
           {/* Desktop/Tablet (lg+): Turntable + controls */}
           <div className="hidden lg:flex lg:flex-col lg:items-center lg:w-full">
             <div className="flex items-center justify-center w-full gap-6 lg:gap-8 xl:gap-16">
-              <button 
-                onClick={isAdmin ? onTogglePlay : undefined}
+              <button
+                onClick={isAdmin ? onPrevious : undefined}
                 className={`text-black/35 transition-colors shrink-0 ${isAdmin ? 'hover:text-black cursor-pointer' : 'opacity-0 pointer-events-none'}`}
               >
                 <svg width="28" height="28" className="lg:w-10 lg:h-10 xl:w-12 xl:h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -182,7 +186,7 @@ export function MusicRoomView({
           transition={{ delay: 0.2, duration: 0.6 }}
           className="hidden lg:flex shrink-0 flex-col justify-center h-full w-[240px] lg:w-[280px] xl:w-[350px]"
       >
-          <StationSequence queue={queue} roomId={roomId} />
+          <StationSequence queue={queue} roomId={roomId} onAddToQueue={onGoToSearch} />
       </motion.div>
 
     </div>

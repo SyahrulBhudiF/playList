@@ -121,7 +121,7 @@ export function PreviewAudioPlayer({ youtubeId, isActive, deviceId, title, autho
           opts={{
             width: '48',
             height: '48',
-            playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0 },
+            playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, origin: window.location.origin },
           }}
         />
       </div>

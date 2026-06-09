@@ -131,7 +131,7 @@ export function handleConnection(io: Server, socket: Socket) {
         LIMIT 1
       `;
       nowPlaying = nowPlayingRows[0] || null;
-      roomManager.setNowPlaying(roomId, nowPlaying);
+      roomManager.setNowPlaying(roomId, nowPlaying as any);
     } catch (err) {
       console.error("[DB ERROR] Failed to fetch nowPlaying:", err);
       nowPlaying = roomManager.getNowPlaying(roomId);

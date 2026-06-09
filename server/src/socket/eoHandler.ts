@@ -33,7 +33,7 @@ export function handleEOEvents(io: Server, socket: Socket) {
         console.log(`Marking ${playingIds.length} playing song(s) as done.`);
         await sql`
           UPDATE songs
-          SET status = 'done'
+          SET status = 'done', done_at = NOW()
           WHERE room_id = ${roomId} AND status = 'playing'
         `;
         roomManager.setNowPlaying(roomId, null);
@@ -132,6 +132,91 @@ export function handleEOEvents(io: Server, socket: Socket) {
     if (!roomId) return;
     // Broadcast to everyone in the room (including sender for consistency)
     io.to(roomId).emit("playback_sync", { currentTime, duration, isPlaying });
+  });
+
+  // EO requests previous track
+  socket.on("previous_track", async (data: { roomId: string }, callback) => {
+    const { roomId } = data;
+
+    if (!roomId) {
+      if (callback) callback({ success: false, error: "Missing roomId" });
+      return;
+    }
+
+    try {
+      const activeEO = roomManager.getPlaybackController(roomId);
+      if (activeEO && activeEO !== socket.id) {
+        if (callback) callback({ success: false, error: "Unauthorized" });
+        return;
+      }
+
+      // Find the most recently completed track
+      const prevSongs = await sql`
+        SELECT id, youtube_id as "youtubeId", title, author
+        FROM songs
+        WHERE room_id = ${roomId} AND status = 'done'
+        ORDER BY done_at DESC
+        LIMIT 1
+      `;
+
+      const prevTrack = prevSongs[0];
+      if (!prevTrack) {
+        if (callback) callback({ success: false, error: "No previous track" });
+        return;
+      }
+      const pt: any = prevTrack;
+
+      // Mark current playing track back to approved so it replays later
+      const currentPlaying = await sql`
+        SELECT id
+        FROM songs
+        WHERE room_id = ${roomId} AND status = 'playing'
+        LIMIT 1
+      `;
+
+      if (currentPlaying.length > 0) {
+        await sql`
+          UPDATE songs
+          SET status = 'approved', approved_at = NOW()
+          WHERE id = ${(currentPlaying[0] as any).id}
+        `;
+      }
+
+      // Mark the previous track as playing again
+      await sql`
+        UPDATE songs
+        SET status = 'playing', done_at = NULL
+        WHERE id = ${pt.id}
+      `;
+
+      roomManager.setNowPlaying(roomId, {
+        id: pt.id,
+        youtubeId: pt.youtubeId,
+        title: pt.title,
+        author: pt.author,
+      });
+
+      // Refresh and broadcast queue
+      const queueRows = await sql`
+        SELECT id, youtube_id as "youtubeId", title, author, status, submitted_by as "submittedBy", created_at as "createdAt"
+        FROM songs
+        WHERE room_id = ${roomId} AND status IN ('pending', 'approved')
+        ORDER BY approved_at ASC NULLS LAST, created_at ASC
+      `;
+      const updatedQueue = [...queueRows];
+      roomManager.setQueue(roomId, updatedQueue);
+
+      io.to(`${roomId}:admin`).emit("queue_updated", updatedQueue);
+      io.to(`${roomId}:participant`).emit("queue_updated", updatedQueue.filter(q => q.status === 'approved'));
+      io.to(`${roomId}:eo`).emit("queue_updated", updatedQueue.filter(q => q.status === 'approved'));
+
+      io.to(roomId).emit("now_playing_updated", pt);
+
+      if (callback) callback({ success: true, previousTrack: pt });
+    } catch (err) {
+      console.error(err);
+      if (callback) callback({ success: false, error: "Database error" });
+    }
   });
 
   // EO toggles playback (Play/Pause)

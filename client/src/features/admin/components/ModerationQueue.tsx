@@ -68,14 +68,13 @@ export function ModerationQueue({
       </div>
 
       <div className="flex flex-col space-y-3 sm:space-y-4 overflow-y-auto max-h-[60vh] sm:max-h-[700px] no-scrollbar py-2 sm:py-4 px-2">
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence>
             {pendingQueue.map((song, index) => (
               <motion.article 
                 key={song.id} 
-                layout 
                 initial={{ opacity: 0, y: 10 }} 
                 animate={{ opacity: 1, y: 0 }} 
-                exit={{ opacity: 0, x: -20 }}
+                exit={{ opacity: 0 }}
               >
                 <Card variant="premium-list" className="p-3 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
                   {/* Top row: index + info on mobile, index + thumb + info + actions on desktop */}

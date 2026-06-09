@@ -20,7 +20,7 @@ export function AdminDashboardPage() {
     roomId, activeTab, setActiveTab, copied, handleCopyKey, tabs, connected, roomKey, nowPlaying,
     upNext, fullQueue, activePlayer, pendingQueue, processingId, editingId, editValue, setEditValue,
     searchQuery, setSearchQuery, searchResults, searchLoading, submittingId, suggestions,
-    onSelectSuggestion, onPlayerReady, onPlayerEnd, togglePlayback, handleApprove,
+    onSelectSuggestion, onPlayerReady, onPlayerEnd, onPrevious, togglePlayback, handleApprove,
     handleDelete, startEditing, handleSaveEdit, handleAddSong, setEditingId,
     setPreviewActive
   } = useAdminDashboardPage();
@@ -93,25 +93,25 @@ export function AdminDashboardPage() {
         </div>
       </nav>
 
-      <main className="w-full h-full px-2 xl:px-6 pt-24 pb-4">
+      <main className="w-full h-full px-2 xl:px-6 pt-28 pb-4">
+        {/* Music room — always mounted, display:none when not active so YouTube keeps playing across tab switches */}
+        <div className={activeTab === 'music' ? 'block h-[calc(100vh-10rem)]' : 'hidden'}>
+          <PlaybackController roomId={roomId} nowPlaying={nowPlaying} upNext={upNext} fullQueue={fullQueue} activePlayer={activePlayer} onPlayerReady={onPlayerReady} onPlayerEnd={onPlayerEnd} onPrevious={onPrevious} togglePlayback={togglePlayback} onGoToSearch={() => setActiveTab('search')} />
+        </div>
+
         <AnimatePresence mode="wait">
           {activeTab === 'room' && (
-            <motion.div key="room" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="w-full flex justify-center">
+            <motion.div key="room" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="w-full flex justify-center pt-6">
               <div className="w-full max-w-4xl"><AccessCodeBanner roomKey={roomKey} copied={copied} onCopy={handleCopyKey} roomId={roomId} /></div>
             </motion.div>
           )}
-          {activeTab === 'music' && (
-            <motion.div key="music" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="w-full h-[calc(100vh-10rem)]">
-              <div className="w-full h-full"><PlaybackController roomId={roomId} nowPlaying={nowPlaying} upNext={upNext} fullQueue={fullQueue} activePlayer={activePlayer} onPlayerReady={onPlayerReady} onPlayerEnd={onPlayerEnd} togglePlayback={togglePlayback} /></div>
-            </motion.div>
-          )}
           {activeTab === 'review' && (
-             <motion.div key="review" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="w-full flex justify-center">
+             <motion.div key="review" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="w-full flex justify-center pt-6">
                 <div className="w-full max-w-5xl"><ModerationQueue pendingQueue={pendingQueue} processingId={processingId} editingId={editingId} editValue={editValue} setEditValue={setEditValue} handleApprove={handleApprove} handleDelete={handleDelete} startEditing={startEditing} handleSaveEdit={handleSaveEdit} setEditingId={setEditingId} onPreviewChange={handlePreviewChange} /></div>
              </motion.div>
           )}
           {activeTab === 'search' && (
-             <motion.div key="search" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="w-full flex justify-center">
+             <motion.div key="search" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="w-full flex justify-center pt-6">
                 <div className="w-full max-w-4xl"><SongSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchLoading={searchLoading} searchResults={searchResults} suggestions={suggestions} onSelectSuggestion={onSelectSuggestion} handleAddSong={handleAddSong} submittingId={submittingId} /></div>
              </motion.div>
           )}

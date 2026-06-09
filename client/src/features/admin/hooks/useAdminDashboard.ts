@@ -146,18 +146,40 @@ export function useAdminDashboard(roomId: string) {
     const cachedUpNext = upNextRef.current;
     const cachedActivePlayer = activePlayerRef.current;
 
-    setNowPlaying(cachedUpNext);
-    const nextPlayer = cachedActivePlayer === 'A' ? 'B' : 'A';
-    setActivePlayer(nextPlayer);
-    const newPlayer = nextPlayer === 'A' ? playerARef.current : playerBRef.current;
-    if (newPlayer) {
-      newPlayer.playVideo();
+    if (cachedUpNext) {
+      // Try to use the preloaded player for instant playback
+      const nextPlayer = cachedActivePlayer === 'A' ? 'B' : 'A';
+      const newPlayer = nextPlayer === 'A' ? playerARef.current : playerBRef.current;
+
+      if (newPlayer) {
+        // Preloaded player is ready — switch to it
+        setNowPlaying(cachedUpNext);
+        setActivePlayer(nextPlayer);
+        newPlayer.playVideo();
+      } else {
+        // Preloaded player not ready yet — fall through to server fetch
+        setNowPlaying(null);
+      }
+    } else {
+      // No preloaded track — clear and wait for server response
+      setNowPlaying(null);
     }
+
+    // Always fetch next upNext from server
     socket.emit('eo_track_ended', { roomId }, (res: EoTrackEndedResponse) => {
       if (res.success) setUpNext(res.upNext);
     });
     // Broadcast that we're still playing (next track started)
     socket.emit('sync_playback', { roomId, currentTime: 0, isPlaying: true });
+  }, [roomId]);
+
+  const onPrevious = useCallback(() => {
+    socket.emit('previous_track', { roomId }, (res: { success: boolean; previousTrack?: Track; error?: string }) => {
+      if (res.success && res.previousTrack) {
+        setNowPlaying(res.previousTrack);
+        // Server broadcasts now_playing_updated, so other clients pick it up
+      }
+    });
   }, [roomId]);
 
   // --- SOCKET LIFECYCLE ---
@@ -376,18 +398,21 @@ export function useAdminDashboard(roomId: string) {
 
   const handleAddSong = (song: SearchResult) => {
     setSubmittingId(song.youtubeId);
+    const adminToken = localStorage.getItem('adminToken');
     socket.emit(
-      'submit_song',
+      'admin_add_song',
       {
         roomId,
         youtubeId: song.youtubeId,
         title: song.title,
         author: song.author,
-        userId: getUserId(),
+        adminToken,
       },
-      () => {
+      (res: { success: boolean; error?: string }) => {
         setSubmittingId(null);
-        // Keep search results visible after adding a song
+        if (!res.success) {
+          console.warn('[ADMIN] Failed to add song:', res.error);
+        }
       },
     );
   };
@@ -421,6 +446,7 @@ export function useAdminDashboard(roomId: string) {
     submittingId,
     onPlayerReady,
     onPlayerEnd,
+    onPrevious,
     togglePlayback,
     handleApprove,
     handleDelete,

@@ -7,11 +7,13 @@ import type { Track } from "../../../shared/types";
 interface StationSequenceProps {
   queue: Track[];
   roomId: string;
+  onAddToQueue?: () => void;
 }
 
 export const StationSequence: React.FC<StationSequenceProps> = ({
   queue,
   roomId,
+  onAddToQueue,
 }) => {
   return (
     <aside className="w-full bg-white/40 backdrop-blur-md border-l border-black/5 flex flex-col p-12">
@@ -76,19 +78,33 @@ export const StationSequence: React.FC<StationSequenceProps> = ({
         ))}
       </div>
 
-      <Button
-        asChild
-        variant="outline"
-        className="mt-8 w-full border-black/10 font-bold uppercase tracking-widest hover:border-black hover:bg-black/5 transition-all text-black/60 hover:text-black group"
-      >
-        <Link to="/r/$roomId/request" params={{ roomId }}>
+      {onAddToQueue ? (
+        <Button
+          variant="outline"
+          className="mt-8 w-full border-black/10 font-bold uppercase tracking-widest hover:border-black hover:bg-black/5 transition-all text-black/60 hover:text-black group"
+          onClick={onAddToQueue}
+        >
           <Plus
             size={14}
             className="mr-2 text-orange-500 group-hover:rotate-90 transition-transform"
           />
           <span>Add to queue</span>
-        </Link>
-      </Button>
+        </Button>
+      ) : (
+        <Button
+          asChild
+          variant="outline"
+          className="mt-8 w-full border-black/10 font-bold uppercase tracking-widest hover:border-black hover:bg-black/5 transition-all text-black/60 hover:text-black group"
+        >
+          <Link to="/r/$roomId/request" params={{ roomId }}>
+            <Plus
+              size={14}
+              className="mr-2 text-orange-500 group-hover:rotate-90 transition-transform"
+            />
+            <span>Add to queue</span>
+          </Link>
+        </Button>
+      )}
     </aside>
   );
 };
