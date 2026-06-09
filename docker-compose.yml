@@ -18,12 +18,12 @@ services:
   # High-speed caching for room codes
   redis:
     image: redis:7-alpine
-    container_name: iknoball-redis
+    container_name: playmusic_redis
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     ports:
       - "6104:6379" # untuk RedisInsight
     volumes:
-      - redis-data:/data
+      - redis_data:/data
     restart: unless-stopped
     networks:
       - app_net

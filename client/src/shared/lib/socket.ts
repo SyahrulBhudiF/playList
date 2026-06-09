@@ -2,8 +2,8 @@ import { io } from "socket.io-client";
 import { v4 as uuidv4 } from 'uuid';
 
 // Singleton socket instance
-export const socket = io("http://localhost:3001", {
-  autoConnect: false, // Connect manually when room is joined
+export const socket = io(import.meta.env.VITE_SOCKET_URL || "", {
+  autoConnect: false,
 });
 
 // User Identity Persistence

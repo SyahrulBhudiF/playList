@@ -16,7 +16,7 @@ if (!process.env.DATABASE_URL) {
 
 const io = new Server({
   cors: {
-    origin: "*",
+    origin: ["https://playlist.fiinnyy.my.id", "http://localhost:5173"],
   },
 });
 
