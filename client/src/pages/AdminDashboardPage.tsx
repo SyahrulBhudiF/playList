@@ -108,7 +108,7 @@ export function AdminDashboardPage() {
           )}
           {activeTab === 'review' && (
              <motion.div key="review" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="w-full flex justify-center pt-6">
-                <div className="w-full max-w-5xl"><ModerationQueue pendingQueue={pendingQueue} processingId={processingId} editingId={editingId} editValue={editValue} setEditValue={setEditValue} handleApprove={handleApprove} handleDelete={handleDelete} startEditing={startEditing} handleSaveEdit={handleSaveEdit} setEditingId={setEditingId} onPreviewChange={handlePreviewChange} /></div>
+                <div className="w-full max-w-5xl h-[calc(100vh-8rem)] flex flex-col"><ModerationQueue pendingQueue={pendingQueue} processingId={processingId} editingId={editingId} editValue={editValue} setEditValue={setEditValue} handleApprove={handleApprove} handleDelete={handleDelete} startEditing={startEditing} handleSaveEdit={handleSaveEdit} setEditingId={setEditingId} onPreviewChange={handlePreviewChange} /></div>
              </motion.div>
           )}
           {activeTab === 'search' && (

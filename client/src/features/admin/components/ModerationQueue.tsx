@@ -67,7 +67,7 @@ export function ModerationQueue({
           </div>
       </div>
 
-      <div className="flex flex-col space-y-3 sm:space-y-4 overflow-y-auto max-h-[60vh] sm:max-h-[700px] no-scrollbar py-2 sm:py-4 px-2">
+      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto no-scrollbar py-2 sm:py-4 px-2">
           <AnimatePresence>
             {pendingQueue.map((song, index) => (
               <motion.article 
@@ -98,7 +98,7 @@ export function ModerationQueue({
                     </div>
                     
                     {/* info */}
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 overflow-hidden">
                       {editingId === song.id ? (
                         <div className="flex gap-2">
                           <Input 
@@ -126,8 +126,8 @@ export function ModerationQueue({
                     </div>
                   </div>
 
-                  {/* Actions — always accessible row */}
-                  <div className="flex items-center gap-2 sm:gap-3 shrink-0 self-end sm:self-center mt-0 sm:mt-0">
+                  {/* Actions — pinned to right */}
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0 self-end sm:self-center sm:ml-auto mt-0 sm:mt-0">
                      <Button 
                        size="icon"
                        variant="outline"

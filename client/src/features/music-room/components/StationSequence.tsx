@@ -16,7 +16,7 @@ export const StationSequence: React.FC<StationSequenceProps> = ({
   onAddToQueue,
 }) => {
   return (
-    <aside className="w-full bg-white/40 backdrop-blur-md border-l border-black/5 flex flex-col p-12">
+    <aside className="w-full bg-white/40 backdrop-blur-md border-l border-black/5 flex flex-col p-12 min-h-0 max-h-full overflow-hidden">
       <div className="flex items-center justify-between mb-16">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white">
@@ -65,7 +65,7 @@ export const StationSequence: React.FC<StationSequenceProps> = ({
                   </div>
                 )}
               </div>
-              <div className="flex flex-col min-w-0">
+              <div className="flex flex-col min-w-0 overflow-hidden">
                 <span className="text-sm font-bold text-black uppercase tracking-tight truncate font-poppins">
                   {track.title}
                 </span>
