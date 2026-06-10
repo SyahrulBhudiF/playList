@@ -18,6 +18,7 @@ export function useMusicRoom(roomId: string) {
   const [roomKey, setRoomKey] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isConnecting, setIsConnecting] = useState(true);
 
   useEffect(() => {
     if (!roomId) return;
@@ -45,7 +46,11 @@ export function useMusicRoom(roomId: string) {
     // Initial fetch
     socket.emit('get_now_playing', { roomId }, (res: GetNowPlayingResponse) => {
       if (res.nowPlaying) setNowPlaying(res.nowPlaying);
+      setIsConnecting(false);
     });
+
+    // Also fall back if socket never responds (e.g. offline)
+    const fallbackTimer = setTimeout(() => setIsConnecting(false), 3000);
 
     const handleNowPlayingUpdated = (track: Track) => {
       setNowPlaying(track);
@@ -87,6 +92,7 @@ export function useMusicRoom(roomId: string) {
 
     // Cleanup
     return () => {
+      clearTimeout(fallbackTimer);
       socket.off('connect', handleConnect);
       socket.off('room_key_info', handleRoomKeyInfo);
       socket.off('now_playing_updated', handleNowPlayingUpdated);
@@ -105,6 +111,7 @@ export function useMusicRoom(roomId: string) {
     roomKey,
     currentTime,
     duration,
-    progress
+    progress,
+    isConnecting
   };
 }

@@ -35,6 +35,7 @@ export function ParticipantPage() {
     handleSelect,
     handleKeySubmit,
     vibes,
+    cooldownSeconds,
   } = useParticipantPage();
 
   // SEO
@@ -108,6 +109,7 @@ export function ParticipantPage() {
             submitting={submitting}
             onSelect={handleSelect}
             vibes={vibes}
+            cooldownSeconds={cooldownSeconds}
           />
         )}
       </AnimatePresence>

@@ -8,6 +8,7 @@ import { Modal } from '../shared/components/Modal';
 import { AdminHeader } from '../shared/components/AdminHeader';
 import { Button } from '../shared/components/button';
 import { Input } from '../shared/components/input';
+import { LoadingOverlay } from '../shared/components/LoadingOverlay';
 import { StationCard } from '../features/admin/components/StationCard';
 import { AdminApprovalCard } from '../features/admin/components/AdminApprovalCard';
 import type { PendingAdmin, Station } from '../shared/types';
@@ -109,7 +110,7 @@ export function AdminHubPage() {
     });
   };
 
-  if (loading || !token) return null;
+  if (loading || !token) return <LoadingOverlay isLoading={true} />;
 
   return (
     <div className="min-h-screen bg-[#fcfcfc] text-black">

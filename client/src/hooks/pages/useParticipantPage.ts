@@ -25,7 +25,8 @@ export function useParticipantPage() {
     handleSelect,
     joinRoom,
     clearStatusMsg,
-    resolveRoomByKey
+    resolveRoomByKey,
+    cooldownSeconds,
   } = useParticipant(roomId);
   
   // Clear status on mount (Prevents sticky alerts on refresh)
@@ -103,6 +104,7 @@ export function useParticipantPage() {
     suggestions,
     handleSelect,
     handleKeySubmit,
-    vibes
+    vibes,
+    cooldownSeconds,
   };
 }

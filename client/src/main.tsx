@@ -63,7 +63,27 @@ const AdminHubPage = lazy(() =>
 );
 
 function RouteLoader() {
-  return <div className="min-h-screen bg-[#fcfcfc]" />;
+  return (
+    <div className="min-h-screen bg-[#fcfcfc] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-8">
+        {/* Spinning Vinyl */}
+        <div className="relative w-20 h-20 animate-spin" style={{ animationDuration: '2s' }}>
+          <div className="absolute inset-0 bg-[#151515] rounded-full border-2 border-black/5" />
+          <div className="absolute inset-2 border border-black/[0.04] rounded-full" />
+          <div className="absolute inset-4 border border-black/[0.04] rounded-full" />
+          <div className="absolute inset-[30%] bg-orange-500 rounded-full flex items-center justify-center">
+            <div className="w-1.5 h-1.5 bg-[#fcfcfc] rounded-full" />
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-24 h-1.5 bg-black/5 rounded-full overflow-hidden">
+            <div className="w-1/2 h-full bg-orange-500 rounded-full animate-pulse" />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-black/20">Loading</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function withSuspense(Component: ComponentType) {

@@ -75,6 +75,7 @@ export function useParticipant(roomId: string) {
 
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [queue, setQueue] = useState<Track[]>([]);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   useEffect(() => {
     if (statusMsg) {
@@ -85,6 +86,21 @@ export function useParticipant(roomId: string) {
     }
     return undefined;
   }, [statusMsg]);
+
+  // Cooldown countdown timer
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setCooldownSeconds(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldownSeconds]);
 
   const debouncedQuery = useDebounce(query, 300);
   const debouncedSuggestionQuery = useDebounce(query, 120);
@@ -237,6 +253,8 @@ export function useParticipant(roomId: string) {
         setSubmitting(null);
         if (res.success) {
           setStatusMsg({ type: 'success', text: 'Song added to queue!' });
+          // Start 3s cooldown on submit buttons
+          setCooldownSeconds(3);
         } else {
           setResults(originalResults);
           setQuery(originalQuery);
@@ -287,5 +305,6 @@ export function useParticipant(roomId: string) {
     joinRoom,
     clearStatusMsg,
     resolveRoomByKey,
+    cooldownSeconds,
   };
 }

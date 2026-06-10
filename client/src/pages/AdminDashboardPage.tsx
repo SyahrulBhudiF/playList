@@ -8,6 +8,7 @@ import { PlaybackController } from '../features/admin/components/PlaybackControl
 import { SongSearch } from '../features/admin/components/SongSearch';
 import { ModerationQueue } from '../features/admin/components/ModerationQueue';
 import { AccessCodeBanner } from '../features/admin/components/AccessCodeBanner';
+import { LoadingOverlay } from '../shared/components/LoadingOverlay';
 import { useAdminDashboardPage } from '../hooks/pages/useAdminDashboardPage';
 
 const isAdminTab = (value: string): value is 'review' | 'music' | 'search' | 'room' =>
@@ -46,7 +47,7 @@ export function AdminDashboardPage() {
     navigate({ to: '/admin/login' });
   }, [logout, navigate]);
 
-  if (loading || !token) return null;
+  if (loading || !token) return <LoadingOverlay isLoading={true} />;
 
   return (
     <div className="min-h-screen bg-[#fdfdfd] text-[#39283f] font-poppins mobile-content-area">

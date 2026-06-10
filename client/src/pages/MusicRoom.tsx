@@ -5,10 +5,11 @@ import { Plus, Home } from 'lucide-react';
 import { Button } from '../shared/components/button';
 import { SecretDoor } from '../shared/components/SecretDoor';
 import { MusicRoomView } from '../features/shared/components/MusicRoomView';
+import { LoadingOverlay } from '../shared/components/LoadingOverlay';
 import { useMusicRoomPage } from '../hooks/pages/useMusicRoomPage';
 
 export function MusicRoom() {
-  const { roomId, nowPlaying, queue, isPlaying, progress, currentTime, duration } = useMusicRoomPage();
+  const { roomId, nowPlaying, queue, isPlaying, progress, currentTime, duration, isConnecting } = useMusicRoomPage();
 
   useEffect(() => {
     document.title = `${roomId.toUpperCase()} // Active Broadcast`;
@@ -16,6 +17,7 @@ export function MusicRoom() {
 
   return (
     <div className="h-screen bg-white text-black font-poppins overflow-hidden flex flex-col relative">
+        <LoadingOverlay isLoading={isConnecting} />
         
         {/* Header */}
         <header className="absolute top-4 sm:top-8 left-4 sm:left-8 right-4 sm:right-8 flex justify-between items-center z-50">

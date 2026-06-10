@@ -3,10 +3,11 @@ import { useMusicRoom } from '../../features/participant/hooks/useMusicRoom';
 
 export function useMusicRoomPage() {
   const { roomId } = useParams({ from: '/r/$roomId' }) as { roomId: string };
-  const musicRoom = useMusicRoom(roomId);
+  const { isConnecting, ...musicRoom } = useMusicRoom(roomId);
 
   return {
     roomId,
+    isConnecting,
     ...musicRoom
   };
 }

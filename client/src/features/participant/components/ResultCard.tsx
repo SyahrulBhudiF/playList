@@ -7,9 +7,12 @@ interface ResultCardProps {
   song: SearchResult;
   onSelect: (song: SearchResult) => void;
   isSubmitting: boolean;
+  cooldownSeconds?: number;
 }
 
-export function ResultCard({ song, onSelect, isSubmitting }: ResultCardProps) {
+export function ResultCard({ song, onSelect, isSubmitting, cooldownSeconds = 0 }: ResultCardProps) {
+  const isOnCooldown = cooldownSeconds > 0;
+
   return (
     <Card variant="premium-list" className="p-4 flex items-center justify-between group rounded-2xl border">
       <div className="flex items-center gap-4">
@@ -27,12 +30,18 @@ export function ResultCard({ song, onSelect, isSubmitting }: ResultCardProps) {
       </div>
       <Button 
         onClick={() => onSelect(song)}
-        disabled={isSubmitting}
+        disabled={isSubmitting || isOnCooldown}
         variant="outline"
-        className="rounded-full h-10 w-10 p-0 border-black/10 hover:bg-black hover:text-white transition-colors"
+        className={`rounded-full h-10 w-10 p-0 border-black/10 transition-colors ${
+          isOnCooldown
+            ? 'bg-orange-500/10 border-orange-500/20 text-orange-500 cursor-not-allowed'
+            : 'hover:bg-black hover:text-white'
+        }`}
       >
         {isSubmitting ? (
           <Loader2 size={16} className="animate-spin" />
+        ) : isOnCooldown ? (
+          <span className="text-[11px] font-bold tabular-nums">{cooldownSeconds}</span>
         ) : (
           <Plus size={18} />
         )}

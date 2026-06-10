@@ -15,6 +15,7 @@ interface RequestFlowProps {
   submitting: string | null;
   onSelect: (song: SearchResult) => void;
   vibes: string[];
+  cooldownSeconds?: number;
 }
 
 export function RequestFlow({
@@ -27,7 +28,8 @@ export function RequestFlow({
   loading,
   submitting,
   onSelect,
-  vibes
+  vibes,
+  cooldownSeconds = 0,
 }: RequestFlowProps) {
   return (
     <motion.div 
@@ -141,6 +143,7 @@ export function RequestFlow({
                         key={song.youtubeId}
                         song={song}
                         isSubmitting={submitting === song.youtubeId}
+                        cooldownSeconds={cooldownSeconds}
                         onSelect={(s) => {
                           onSelect(s);
                         }}
