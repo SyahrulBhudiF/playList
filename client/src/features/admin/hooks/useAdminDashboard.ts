@@ -3,6 +3,7 @@ import { socket } from '../../../shared/lib/socket';
 import { useDebounce } from '../../../shared/hooks/useDebounce';
 import type { YouTubeProps } from 'react-youtube';
 import type { Track, PendingSong, SearchResult } from '../types';
+import { useAdminQueueStore } from '../../../stores/adminQueueStore';
 
 type BasicResponse = {
   success: boolean;
@@ -80,11 +81,20 @@ export function useAdminDashboard(roomId: string) {
   const isRequestingNextRef = useRef(false);
 
   // --- STATE: MODERATION (Admin) ---
-  const [pendingQueue, setPendingQueue] = useState<PendingSong[]>([]);
-  const [fullQueue, setFullQueue] = useState<Track[]>([]);
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState('');
+  const pendingQueue = useAdminQueueStore((state) => state.pendingQueue);
+  const fullQueue = useAdminQueueStore((state) => state.fullQueue);
+  const processingId = useAdminQueueStore((state) => state.processingId);
+  const editingId = useAdminQueueStore((state) => state.editingId);
+  const editValue = useAdminQueueStore((state) => state.editValue);
+  const applyInitialQueues = useAdminQueueStore((state) => state.applyInitialQueues);
+  const applyNewPendingSong = useAdminQueueStore((state) => state.applyNewPendingSong);
+  const applySongApproved = useAdminQueueStore((state) => state.applySongApproved);
+  const applySongDeleted = useAdminQueueStore((state) => state.applySongDeleted);
+  const applySongUpdated = useAdminQueueStore((state) => state.applySongUpdated);
+  const setProcessingId = useAdminQueueStore((state) => state.setProcessingId);
+  const startAdminEditing = useAdminQueueStore((state) => state.startEditing);
+  const stopAdminEditing = useAdminQueueStore((state) => state.stopEditing);
+  const setEditValue = useAdminQueueStore((state) => state.setEditValue);
 
   // --- STATE: SEARCH (Add Music) ---
   const [searchQuery, setSearchQueryValue] = useState('');
@@ -250,8 +260,7 @@ export function useAdminDashboard(roomId: string) {
       const pending = queue.filter((q) => q.status === 'pending');
       const approved = queue.filter((q) => q.status === 'approved') as Track[];
 
-      setPendingQueue(pending);
-      setFullQueue(approved);
+      applyInitialQueues(pending, approved);
 
       // Only request next track if there is at least one approved song.
       if (!nowPlayingRef.current && approved.length > 0 && !isRequestingNextRef.current) {
@@ -261,26 +270,19 @@ export function useAdminDashboard(roomId: string) {
 
     const handleNewPendingSong = (song: PendingSong) => {
       console.log('[DASHBOARD] New pending song received:', song);
-      setPendingQueue((prev) => [...prev, song]);
+      applyNewPendingSong(song);
     };
 
     const handleSongDeleted = ({ songId }: { songId: string }) => {
-      setPendingQueue((prev) => prev.filter((s) => s.id !== songId));
-      setFullQueue((prev) => prev.filter((s) => s.id !== songId));
+      applySongDeleted(songId);
     };
 
     const handleSongApproved = (song: PendingSong & Partial<Track>) => {
-      setPendingQueue((prev) => prev.filter((s) => s.id !== song.id));
-      setFullQueue((prev) => (prev.some((s) => s.id === song.id) ? prev : [...prev, song as Track]));
+      applySongApproved(song as Track);
     };
 
     const handleSongUpdated = (updated: SongUpdatedPayload) => {
-      setPendingQueue((prev) =>
-        prev.map((s) => (s.id === updated.id ? { ...s, title: updated.title } : s)),
-      );
-      setFullQueue((prev) =>
-        prev.map((s) => (s.id === updated.id ? { ...s, title: updated.title } : s)),
-      );
+      applySongUpdated(updated);
     };
 
     const handleDisconnect = () => {
@@ -312,7 +314,7 @@ export function useAdminDashboard(roomId: string) {
       socket.off('song_updated', handleSongUpdated);
       socket.off('disconnect', handleDisconnect);
     };
-  }, [fetchNext, roomId]);
+  }, [applyInitialQueues, applyNewPendingSong, applySongApproved, applySongDeleted, applySongUpdated, fetchNext, roomId]);
 
   useEffect(() => {
     if (connected && !nowPlaying && fullQueue.length > 0 && !isRequestingNextRef.current) {
@@ -322,37 +324,38 @@ export function useAdminDashboard(roomId: string) {
 
   // --- LOGIC: MODERATION ---
   const handleApprove = (songId: string) => {
-    const original = [...pendingQueue];
-    setPendingQueue((prev) => prev.filter((s) => s.id !== songId));
+    const originalPending = [...pendingQueue];
+    const originalFull = [...fullQueue];
+    applySongDeleted(songId);
     setProcessingId(songId);
     socket.emit('approve_song', { roomId, songId }, (res: BasicResponse) => {
       setProcessingId(null);
       if (!res.success) {
-        setPendingQueue(original);
+        applyInitialQueues(originalPending, originalFull);
       }
     });
   };
 
   const handleDelete = (songId: string) => {
-    const original = [...pendingQueue];
-    setPendingQueue((prev) => prev.filter((s) => s.id !== songId));
+    const originalPending = [...pendingQueue];
+    const originalFull = [...fullQueue];
+    applySongDeleted(songId);
     setProcessingId(songId);
     socket.emit('delete_song', { roomId, songId }, (res: BasicResponse) => {
       setProcessingId(null);
       if (!res.success) {
-        setPendingQueue(original);
+        applyInitialQueues(originalPending, originalFull);
       }
     });
   };
 
   const startEditing = (song: PendingSong) => {
-    setEditingId(song.id);
-    setEditValue(song.title);
+    startAdminEditing(song);
   };
 
   const handleSaveEdit = (songId: string) => {
     socket.emit('edit_song', { roomId, songId, newTitle: editValue }, (res: BasicResponse) => {
-      if (res.success) setEditingId(null);
+      if (res.success) stopAdminEditing();
     });
   };
 
@@ -460,6 +463,6 @@ export function useAdminDashboard(roomId: string) {
     startEditing,
     handleSaveEdit,
     handleAddSong,
-    setEditingId,
+    setEditingId: (id: string | null) => (id ? startAdminEditing({ id, title: editValue }) : stopAdminEditing()),
   };
 }
