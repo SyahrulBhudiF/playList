@@ -71,7 +71,13 @@ export const playbackMachine = setup({
     ready: { on: { PLAY: { target: 'playing', actions: 'clearError' }, PAUSE: 'paused' } },
     playing: { on: { PAUSE: 'paused', TRACK_ENDED: 'transitioning', NEXT_REQUESTED: 'transitioning', PREVIOUS_REQUESTED: 'previousLoading' } },
     paused: { on: { PLAY: 'playing', NEXT_REQUESTED: 'transitioning', PREVIOUS_REQUESTED: 'previousLoading' } },
-    transitioning: { on: { NEXT_RESOLVED: { target: 'playing', actions: ['setActivePlayer', 'clearError'] }, NEXT_FAILED: { target: 'error', actions: 'setError' } } },
+    transitioning: {
+      on: {
+        TRACK_LOADED: { target: 'playing', actions: 'clearError' },
+        NEXT_RESOLVED: { target: 'playing', actions: ['setActivePlayer', 'clearError'] },
+        NEXT_FAILED: { target: 'error', actions: 'setError' },
+      },
+    },
     previousLoading: { on: { PREVIOUS_RESOLVED: { target: 'playing', actions: 'clearError' }, PREVIOUS_FAILED: { target: 'error', actions: 'setError' } } },
     error: { on: { PLAY: { target: 'playing', actions: 'clearError' }, TRACK_LOADED: { target: 'ready', actions: 'clearError' } } },
   },

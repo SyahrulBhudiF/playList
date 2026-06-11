@@ -17,8 +17,10 @@ describe("frontend state stores", () => {
       useRoomStore.getState().applySongApproved(track("a2"));
       useRoomStore.getState().applySongApproved(track("a2"));
       useRoomStore.getState().applySongRemoved("a1");
+      useRoomStore.getState().setNowPlaying(track("a2"));
 
-      expect(useRoomStore.getState().queue.map((song) => song.id)).toEqual(["a2"]);
+      expect(useRoomStore.getState().queue).toEqual([]);
+      expect(useRoomStore.getState().nowPlaying?.id).toBe("a2");
     }),
   );
 

@@ -39,7 +39,12 @@ export const useRoomStore = create<RoomState>((set) => ({
   ...initialRoomState,
   setRoomId: (roomId) => set({ roomId }),
   setRoomKey: (roomKey) => set({ roomKey }),
-  setNowPlaying: (track) => set({ nowPlaying: track, isPlaying: Boolean(track) }),
+  setNowPlaying: (track) =>
+    set((state) => ({
+      nowPlaying: track,
+      isPlaying: Boolean(track),
+      queue: track ? state.queue.filter((song) => song.id !== track.id) : state.queue,
+    })),
   applyQueueSnapshot: (queue) =>
     set({ queue: queue.filter((song) => !('status' in song) || song.status === 'approved') as Track[] }),
   applySongApproved: (song) =>

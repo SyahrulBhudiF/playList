@@ -104,11 +104,14 @@ export function useAdminDashboard(roomId: string) {
   }, []);
 
   // --- LOGIC: PLAYER (EO) ---
-  const upNextRef = useRef<Track | null>(null);
   const activePlayerRef = useRef<'A' | 'B'>('A');
 
-  useEffect(() => { upNextRef.current = upNext; }, [upNext]);
   useEffect(() => { activePlayerRef.current = activePlayer; }, [activePlayer]);
+
+  const applyNowPlaying = useCallback((track: Track | null) => {
+    setNowPlaying(track);
+    if (track) applySongDeleted(track.id);
+  }, [applySongDeleted]);
 
   const fetchNext = useCallback(() => {
     if (!roomId || isRequestingNextRef.current) return;
@@ -116,12 +119,12 @@ export function useAdminDashboard(roomId: string) {
     isRequestingNextRef.current = true;
     socket.emit('eo_track_ended', { roomId, idempotencyKey: crypto.randomUUID() }, (res: EoTrackEndedResponse) => {
       if (res.success) {
-        setNowPlaying(res.nextTrack);
+        applyNowPlaying(res.nextTrack);
         setUpNext(res.upNext);
       }
       isRequestingNextRef.current = false;
     });
-  }, [roomId]);
+  }, [applyNowPlaying, roomId]);
 
   const onPlayerReady: (id: 'A' | 'B') => NonNullable<YouTubeProps['onReady']> = (id) => (event) => {
     if (id === 'A') playerARef.current = event.target as unknown as PlayerRef;
@@ -129,44 +132,38 @@ export function useAdminDashboard(roomId: string) {
   };
 
   const onPlayerEnd = useCallback(() => {
-    const cachedUpNext = upNextRef.current;
-    const cachedActivePlayer = activePlayerRef.current;
+    if (!roomId || isRequestingNextRef.current) return;
 
-    if (cachedUpNext) {
-      // Try to use the preloaded player for instant playback
-      const nextPlayer = cachedActivePlayer === 'A' ? 'B' : 'A';
-      const newPlayer = nextPlayer === 'A' ? playerARef.current : playerBRef.current;
-
-      if (newPlayer) {
-        // Preloaded player is ready — switch to it
-        setNowPlaying(cachedUpNext);
-        setActivePlayer(nextPlayer);
-        newPlayer.playVideo();
-      } else {
-        // Preloaded player not ready yet — fall through to server fetch
-        setNowPlaying(null);
-      }
-    } else {
-      // No preloaded track — clear and wait for server response
-      setNowPlaying(null);
-    }
-
-    // Always fetch next upNext from server
+    isRequestingNextRef.current = true;
     socket.emit('eo_track_ended', { roomId, idempotencyKey: crypto.randomUUID() }, (res: EoTrackEndedResponse) => {
-      if (res.success) setUpNext(res.upNext);
+      if (res.success) {
+        applyNowPlaying(res.nextTrack);
+        setUpNext(res.upNext);
+
+        if (res.nextTrack) {
+          const nextPlayer = activePlayerRef.current === 'A' ? 'B' : 'A';
+          const newPlayer = nextPlayer === 'A' ? playerARef.current : playerBRef.current;
+          if (newPlayer) {
+            setActivePlayer(nextPlayer);
+            newPlayer.playVideo();
+          }
+          socket.emit('sync_playback', { roomId, currentTime: 0, duration: 0, isPlaying: true });
+        } else {
+          socket.emit('sync_playback', { roomId, currentTime: 0, duration: 0, isPlaying: false });
+        }
+      }
+      isRequestingNextRef.current = false;
     });
-    // Broadcast that we're still playing (next track started)
-    socket.emit('sync_playback', { roomId, currentTime: 0, isPlaying: true });
-  }, [roomId]);
+  }, [applyNowPlaying, roomId]);
 
   const onPrevious = useCallback(() => {
     socket.emit('previous_track', { roomId }, (res: { success: boolean; previousTrack?: Track; error?: string }) => {
       if (res.success && res.previousTrack) {
-        setNowPlaying(res.previousTrack);
+        applyNowPlaying(res.previousTrack);
         // Server broadcasts now_playing_updated, so other clients pick it up
       }
     });
-  }, [roomId]);
+  }, [applyNowPlaying, roomId]);
 
   // --- SOCKET LIFECYCLE ---
   const joinRoomRef = useRef<string | null>(null);
@@ -229,7 +226,7 @@ export function useAdminDashboard(roomId: string) {
     };
 
     const handleNowPlayingUpdated = (track: Track) => {
-      setNowPlaying(track);
+      applyNowPlaying(track);
     };
 
     const handleQueueUpdated = (queue: QueueSong[]) => {
@@ -290,7 +287,7 @@ export function useAdminDashboard(roomId: string) {
       socket.off('song_updated', handleSongUpdated);
       socket.off('disconnect', handleDisconnect);
     };
-  }, [applyInitialQueues, applyNewPendingSong, applySongApproved, applySongDeleted, applySongUpdated, fetchNext, roomId]);
+  }, [applyInitialQueues, applyNewPendingSong, applyNowPlaying, applySongApproved, applySongDeleted, applySongUpdated, fetchNext, roomId]);
 
   useEffect(() => {
     if (connected && !nowPlaying && fullQueue.length > 0 && !isRequestingNextRef.current) {

@@ -128,7 +128,6 @@ export function PlaybackController({
     if (playback.matches('transitioning')) return;
     sendPlayback({ type: 'TRACK_ENDED' });
     onPlayerEnd();
-    sendPlayback({ type: 'NEXT_RESOLVED' });
   }, [onPlayerEnd, playback, sendPlayback]);
 
   return (
