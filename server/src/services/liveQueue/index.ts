@@ -283,6 +283,6 @@ export async function previousTrack(roomId: string) {
   );
 
   return JSON.parse(String(raw)) as
-    | { ok: true; previousTrack: QueueSong; returnedTrack: QueueSong | null; queueVersion: number }
+    | { ok: true; previousTrack: QueueSong; returnedTrack: QueueSong | null; hasPrevious: boolean; queueVersion: number }
     | { ok: false; error: "no_previous_track" };
 }

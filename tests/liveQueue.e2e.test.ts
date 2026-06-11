@@ -130,6 +130,39 @@ describe("live queue e2e", () => {
     }),
   );
 
+  it.effect("keeps restored current tracks at the front when walking backward", () =>
+    Effect.gen(function* () {
+      const roomId = `e2e-${crypto.randomUUID()}`;
+      const ids = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
+      remember(roomId, ...ids);
+      yield* seedHotRoom(roomId);
+
+      yield* Effect.promise(() =>
+        redis.mset(
+          ...ids.flatMap((id, index) => [
+            `song:${id}`,
+            JSON.stringify({ id, youtubeId: `yt-${index + 1}`, title: `Song ${index + 1}`, status: "approved" }),
+          ]),
+        ),
+      );
+      yield* Effect.promise(() => redis.rpush(`room:${roomId}:queue:approved`, ...ids));
+
+      for (const index of ids.keys()) {
+        const next = yield* Effect.promise(() => transitionToNextTrack(roomId, `next-${index}`));
+        expect(next.nextTrack?.id).toBe(ids[index]);
+      }
+
+      for (let index = ids.length - 2; index >= 0; index--) {
+        const previous = yield* Effect.promise(() => previousTrack(roomId));
+        expect(previous.ok).toBe(true);
+        if (previous.ok) expect(previous.previousTrack.id).toBe(ids[index]);
+      }
+
+      expect(yield* Effect.promise(() => redis.get(`room:${roomId}:nowPlaying`))).toBe(ids[0]);
+      expect(yield* Effect.promise(() => redis.lrange(`room:${roomId}:queue:approved`, 0, -1))).toEqual(ids.slice(1));
+    }),
+  );
+
   it.effect("handles empty approved queue without selecting a track", () =>
     Effect.gen(function* () {
       const roomId = `e2e-${crypto.randomUUID()}`;

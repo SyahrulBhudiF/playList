@@ -32,7 +32,7 @@ export function handleEOEvents(io: Server, socket: Socket) {
       io.to(roomId).emit("now_playing_updated", nextTrack);
       if (nextTrack) io.to(roomId).emit("song_removed_from_queue", { songId: nextTrack.id });
 
-      if (callback) callback({ success: true, nextTrack, upNext, queueVersion });
+      if (callback) callback({ success: true, oldTrackId, nextTrack, upNext, queueVersion });
 
     } catch (err) {
       console.error(err);
@@ -80,7 +80,7 @@ export function handleEOEvents(io: Server, socket: Socket) {
       io.to(roomId).emit("now_playing_updated", result.previousTrack);
       if (result.returnedTrack) io.to(roomId).emit("song_approved", result.returnedTrack);
 
-      if (callback) callback({ success: true, previousTrack: result.previousTrack, queueVersion: result.queueVersion });
+      if (callback) callback({ success: true, previousTrack: result.previousTrack, hasPrevious: result.hasPrevious, queueVersion: result.queueVersion });
     } catch (err) {
       console.error(err);
       if (callback) callback({ success: false, error: "Database error" });

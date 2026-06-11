@@ -19,7 +19,7 @@ export function AdminDashboardPage() {
   const { logout, user, token, loading } = useAdminAuth();
   const {
     roomId, activeTab, setActiveTab, copied, handleCopyKey, tabs, connected, roomKey, nowPlaying,
-    upNext, fullQueue, activePlayer, pendingQueue, processingId, editingId, editValue, setEditValue,
+    upNext, fullQueue, activePlayer, hasPreviousTrack, pendingQueue, processingId, editingId, editValue, setEditValue,
     searchQuery, setSearchQuery, searchResults, searchLoading, submittingId, suggestions,
     onSelectSuggestion, onPlayerReady, onPlayerEnd, onPrevious, togglePlayback, handleApprove,
     handleDelete, startEditing, handleSaveEdit, handleAddSong, setEditingId,
@@ -90,7 +90,7 @@ export function AdminDashboardPage() {
       <main className="w-full h-full px-2 xl:px-6 pt-28 pb-4">
         {/* Music room — always mounted, display:none when not active so YouTube keeps playing across tab switches */}
         <div className={activeTab === 'music' ? 'block h-[calc(100vh-10rem)]' : 'hidden'}>
-          <PlaybackController roomId={roomId} nowPlaying={nowPlaying} upNext={upNext} fullQueue={fullQueue} activePlayer={activePlayer} onPlayerReady={onPlayerReady} onPlayerEnd={onPlayerEnd} onPrevious={onPrevious} togglePlayback={togglePlayback} onGoToSearch={() => setActiveTab('search')} />
+          <PlaybackController roomId={roomId} nowPlaying={nowPlaying} upNext={upNext} fullQueue={fullQueue} activePlayer={activePlayer} hasPreviousTrack={hasPreviousTrack} onPlayerReady={onPlayerReady} onPlayerEnd={onPlayerEnd} onPrevious={onPrevious} togglePlayback={togglePlayback} onGoToSearch={() => setActiveTab('search')} />
         </div>
 
         <AnimatePresence mode="wait">

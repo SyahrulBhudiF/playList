@@ -20,7 +20,7 @@ if currentTrackId then
   currentTrack = cjson.decode(redis.call('GET', songPrefix .. currentTrackId) or '{}')
   currentTrack.status = 'approved'
   redis.call('SET', songPrefix .. currentTrackId, cjson.encode(currentTrack))
-  redis.call('RPUSH', approvedKey, currentTrackId)
+  redis.call('LPUSH', approvedKey, currentTrackId)
 end
 
 local previousTrack = cjson.decode(redis.call('GET', songPrefix .. previousTrackId) or '{}')
@@ -46,5 +46,6 @@ return cjson.encode({
   ok = true,
   previousTrack = previousTrack,
   returnedTrack = currentTrack or cjson.null,
+  hasPrevious = redis.call('LLEN', doneKey) > 0,
   queueVersion = version
 })

@@ -14,6 +14,7 @@ export type QueueSong = PendingSong & Partial<Track>;
 
 export type EoTrackEndedResponse = {
   success: boolean;
+  oldTrackId?: string | null;
   nextTrack: Track | null;
   upNext: Track | null;
 };
@@ -45,9 +46,10 @@ export interface PlaybackControllerProps {
   upNext: Track | null;
   fullQueue: Track[];
   activePlayer: 'A' | 'B';
+  hasPreviousTrack: boolean;
   onPlayerReady: (id: 'A' | 'B') => NonNullable<YouTubeProps['onReady']>;
-  onPlayerEnd: () => void;
-  onPrevious: () => void;
+  onPlayerEnd: () => Promise<boolean>;
+  onPrevious: () => Promise<boolean>;
   onGoToSearch: () => void;
   togglePlayback: (isPlaying: boolean) => void;
 }

@@ -68,7 +68,7 @@ export const playbackMachine = setup({
   states: {
     idle: { on: { TRACK_LOADED: 'ready', PLAYER_READY: 'ready' } },
     loading: { on: { TRACK_LOADED: 'ready' } },
-    ready: { on: { PLAY: { target: 'playing', actions: 'clearError' }, PAUSE: 'paused' } },
+    ready: { on: { PLAY: { target: 'playing', actions: 'clearError' }, PAUSE: 'paused', TRACK_ENDED: 'transitioning', NEXT_REQUESTED: 'transitioning', PREVIOUS_REQUESTED: 'previousLoading' } },
     playing: { on: { PAUSE: 'paused', TRACK_ENDED: 'transitioning', NEXT_REQUESTED: 'transitioning', PREVIOUS_REQUESTED: 'previousLoading' } },
     paused: { on: { PLAY: 'playing', NEXT_REQUESTED: 'transitioning', PREVIOUS_REQUESTED: 'previousLoading' } },
     transitioning: {
@@ -79,6 +79,6 @@ export const playbackMachine = setup({
       },
     },
     previousLoading: { on: { PREVIOUS_RESOLVED: { target: 'playing', actions: 'clearError' }, PREVIOUS_FAILED: { target: 'error', actions: 'setError' } } },
-    error: { on: { PLAY: { target: 'playing', actions: 'clearError' }, TRACK_LOADED: { target: 'ready', actions: 'clearError' } } },
+    error: { on: { PLAY: { target: 'playing', actions: 'clearError' }, TRACK_LOADED: { target: 'ready', actions: 'clearError' }, TRACK_ENDED: 'transitioning', NEXT_REQUESTED: 'transitioning', PREVIOUS_REQUESTED: 'previousLoading' } },
   },
 });

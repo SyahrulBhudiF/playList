@@ -50,11 +50,13 @@ export function useAdminDashboard(roomId: string) {
   // --- STATE: PLAYER (EO) ---
   const [nowPlaying, setNowPlaying] = useState<Track | null>(null);
   const [upNext, setUpNext] = useState<Track | null>(null);
+  const [hasPreviousTrack, setHasPreviousTrack] = useState(false);
   const [activePlayer, setActivePlayer] = useState<'A' | 'B'>('A');
   const playerARef = useRef<PlayerRef | null>(null);
   const playerBRef = useRef<PlayerRef | null>(null);
   const nowPlayingRef = useRef<Track | null>(null);
   const isRequestingNextRef = useRef(false);
+  const isRequestingPreviousRef = useRef(false);
 
   // --- STATE: MODERATION (Admin) ---
   const pendingQueue = useAdminQueueStore((state) => state.pendingQueue);
@@ -121,6 +123,7 @@ export function useAdminDashboard(roomId: string) {
       if (res.success) {
         applyNowPlaying(res.nextTrack);
         setUpNext(res.upNext);
+        if (res.oldTrackId) setHasPreviousTrack(true);
       }
       isRequestingNextRef.current = false;
     });
@@ -132,36 +135,49 @@ export function useAdminDashboard(roomId: string) {
   };
 
   const onPlayerEnd = useCallback(() => {
-    if (!roomId || isRequestingNextRef.current) return;
+    if (!roomId || isRequestingNextRef.current) return Promise.resolve(false);
 
     isRequestingNextRef.current = true;
-    socket.emit('eo_track_ended', { roomId, idempotencyKey: crypto.randomUUID() }, (res: EoTrackEndedResponse) => {
-      if (res.success) {
-        applyNowPlaying(res.nextTrack);
-        setUpNext(res.upNext);
+    return new Promise<boolean>((resolve) => {
+      socket.emit('eo_track_ended', { roomId, idempotencyKey: crypto.randomUUID() }, (res: EoTrackEndedResponse) => {
+        let advanced = false;
+        if (res.success) {
+          applyNowPlaying(res.nextTrack);
+          setUpNext(res.upNext);
+          if (res.oldTrackId) setHasPreviousTrack(true);
 
-        if (res.nextTrack) {
-          const nextPlayer = activePlayerRef.current === 'A' ? 'B' : 'A';
-          const newPlayer = nextPlayer === 'A' ? playerARef.current : playerBRef.current;
-          if (newPlayer) {
+          if (res.nextTrack) {
+            const nextPlayer = activePlayerRef.current === 'A' ? 'B' : 'A';
             setActivePlayer(nextPlayer);
-            newPlayer.playVideo();
+            socket.emit('sync_playback', { roomId, currentTime: 0, duration: 0, isPlaying: true });
+            advanced = true;
+          } else {
+            socket.emit('sync_playback', { roomId, currentTime: 0, duration: 0, isPlaying: false });
           }
-          socket.emit('sync_playback', { roomId, currentTime: 0, duration: 0, isPlaying: true });
-        } else {
-          socket.emit('sync_playback', { roomId, currentTime: 0, duration: 0, isPlaying: false });
         }
-      }
-      isRequestingNextRef.current = false;
+        isRequestingNextRef.current = false;
+        resolve(advanced);
+      });
     });
   }, [applyNowPlaying, roomId]);
 
   const onPrevious = useCallback(() => {
-    socket.emit('previous_track', { roomId }, (res: { success: boolean; previousTrack?: Track; error?: string }) => {
-      if (res.success && res.previousTrack) {
-        applyNowPlaying(res.previousTrack);
-        // Server broadcasts now_playing_updated, so other clients pick it up
-      }
+    if (!roomId || isRequestingPreviousRef.current) return Promise.resolve(false);
+
+    isRequestingPreviousRef.current = true;
+    return new Promise<boolean>((resolve) => {
+      socket.emit('previous_track', { roomId }, (res: { success: boolean; previousTrack?: Track; hasPrevious?: boolean; error?: string }) => {
+        const moved = Boolean(res.success && res.previousTrack);
+        if (res.success && res.previousTrack) {
+          applyNowPlaying(res.previousTrack);
+          setHasPreviousTrack(Boolean(res.hasPrevious));
+          // Server broadcasts now_playing_updated, so other clients pick it up
+        } else {
+          setHasPreviousTrack(false);
+        }
+        isRequestingPreviousRef.current = false;
+        resolve(moved);
+      });
     });
   }, [applyNowPlaying, roomId]);
 
@@ -193,7 +209,6 @@ export function useAdminDashboard(roomId: string) {
     };
 
     joinRoomRef.current = roomId;
-    doJoinRoom();
 
     const handleConnect = () => {
       console.log('[DASHBOARD] Socket connected');
@@ -213,7 +228,8 @@ export function useAdminDashboard(roomId: string) {
     // Socket might already be connected (e.g. from useAdminAuth on hub page)
     // socket.io won't re-fire 'connect' if already connected when we register the listener
     if (socket.connected) {
-      handleConnect();
+      setConnected(true);
+      doJoinRoom();
     }
 
     const handleEoRegistered = () => {
@@ -412,6 +428,7 @@ export function useAdminDashboard(roomId: string) {
     nowPlaying,
     upNext,
     activePlayer,
+    hasPreviousTrack,
     previewActive,
     setPreviewActive,
     pendingQueue,

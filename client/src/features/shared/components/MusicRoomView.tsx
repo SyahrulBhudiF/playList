@@ -15,6 +15,7 @@ interface MusicRoomViewProps {
   currentTime?: number;
   duration?: number;
   role: 'admin' | 'participant';
+  hasPreviousTrack?: boolean;
   onSkip?: () => void;
   onPrevious?: () => void;
   onTogglePlay?: () => void;
@@ -30,6 +31,7 @@ export function MusicRoomView({
   currentTime = 0,
   duration = 0,
   role,
+  hasPreviousTrack = false,
   onSkip,
   onPrevious,
   onTogglePlay,
@@ -131,8 +133,11 @@ export function MusicRoomView({
           <div className="hidden lg:flex lg:flex-col lg:items-center lg:w-full">
             <div className="flex items-center justify-center w-full gap-6 lg:gap-8 xl:gap-16">
               <button
-                onClick={isAdmin ? onPrevious : undefined}
-                className={`text-black/35 transition-colors shrink-0 ${isAdmin ? 'hover:text-black cursor-pointer' : 'opacity-0 pointer-events-none'}`}
+                onClick={isAdmin && hasPreviousTrack ? onPrevious : undefined}
+                disabled={isAdmin && !hasPreviousTrack}
+                aria-label={hasPreviousTrack ? 'Go to previous track' : 'No previous track available'}
+                title={hasPreviousTrack ? 'Go to previous track' : 'No previous track available'}
+                className={`text-black/35 transition-colors shrink-0 ${isAdmin ? (hasPreviousTrack ? 'hover:text-black cursor-pointer' : 'opacity-0 pointer-events-none') : 'opacity-0 pointer-events-none'}`}
               >
                 <svg width="28" height="28" className="lg:w-10 lg:h-10 xl:w-12 xl:h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="4" x2="5" y2="20"/>

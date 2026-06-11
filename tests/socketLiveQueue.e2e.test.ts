@@ -210,7 +210,7 @@ describe("socket live queue e2e", () => {
       const nextMs = performance.now() - nextStarted;
 
       expect(previousResponse.previousTrack?.id).toBe(previousId);
-      expect(nextResponse.nextTrack?.id).toBe(nextId);
+      expect(nextResponse.nextTrack?.id).toBe(currentId);
       expect(previousMs).toBeLessThan(100);
       expect(nextMs).toBeLessThan(100);
     }),

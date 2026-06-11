@@ -22,6 +22,7 @@ export function PlaybackController({
   upNext,
   fullQueue,
   activePlayer,
+  hasPreviousTrack,
   onPlayerReady,
   onPlayerEnd,
   onPrevious,
@@ -127,7 +128,13 @@ export function PlaybackController({
   const handleTrackEnd = useCallback(() => {
     if (playback.matches('transitioning')) return;
     sendPlayback({ type: 'TRACK_ENDED' });
-    onPlayerEnd();
+    onPlayerEnd()
+      .then((advanced) => {
+        sendPlayback(advanced ? { type: 'NEXT_RESOLVED' } : { type: 'NEXT_FAILED', error: 'No next track' });
+      })
+      .catch((error: unknown) => {
+        sendPlayback({ type: 'NEXT_FAILED', error: error instanceof Error ? error.message : 'Failed to skip track' });
+      });
   }, [onPlayerEnd, playback, sendPlayback]);
 
   return (
@@ -183,7 +190,18 @@ export function PlaybackController({
         duration={duration}
         role="admin"
         onSkip={handleTrackEnd}
-        onPrevious={onPrevious}
+        hasPreviousTrack={hasPreviousTrack}
+        onPrevious={() => {
+          if (!hasPreviousTrack || playback.matches('previousLoading')) return;
+          sendPlayback({ type: 'PREVIOUS_REQUESTED' });
+          onPrevious()
+            .then((moved) => {
+              sendPlayback(moved ? { type: 'PREVIOUS_RESOLVED' } : { type: 'PREVIOUS_FAILED', error: 'No previous track' });
+            })
+            .catch((error: unknown) => {
+              sendPlayback({ type: 'PREVIOUS_FAILED', error: error instanceof Error ? error.message : 'Failed to load previous track' });
+            });
+        }}
         onTogglePlay={handleTogglePlay}
         onGoToSearch={onGoToSearch}
       />
