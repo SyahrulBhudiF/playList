@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { redis } from "../lib/redis";
+import { dbEventRedisReader, redis } from "../lib/redis";
 import {
   DB_EVENT_BATCH_SIZE,
   DB_EVENT_BLOCK_MS,
@@ -66,7 +66,7 @@ export const requeueMessage = (messageId: string, event: DbEvent) =>
   });
 
 export const readNewMessages = Effect.promise(async () => {
-  const response = (await redis.xreadgroup(
+  const response = (await dbEventRedisReader.xreadgroup(
     "GROUP",
     DB_EVENT_GROUP,
     DB_EVENT_CONSUMER,
