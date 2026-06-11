@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import playIcon from "@/assets/PLay.svg";
 import pauseIcon from "@/assets/Pause.svg";
-import logo from "@/assets/logo.svg";
 
 interface TurntableProps {
   isPlaying: boolean;
@@ -128,15 +127,6 @@ export const Turntable = ({
           )}
         </div>
 
-        <div
-          className={`absolute -top-[5%] w-[6%] h-[6%] z-40 transition-opacity duration-1000 ${isPlaying ? "opacity-55" : "opacity-35"}`}
-        >
-          <img
-            src={logo}
-            alt="Logo"
-            className="relative w-full h-full grayscale"
-          />
-        </div>
       </button>
 
       {/* NEEDLE ASSEMBLY */}

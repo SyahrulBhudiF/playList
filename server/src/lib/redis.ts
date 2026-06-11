@@ -2,19 +2,28 @@ import Redis from "ioredis";
 
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 
-export const redis = new Redis(redisUrl, {
+const redisOptions = {
   maxRetriesPerRequest: null,
-  retryStrategy: (times) => {
-    return Math.min(times * 50, 2000);
-  },
-});
+  retryStrategy: (times: number) => Math.min(times * 50, 2000),
+};
+
+export const redis = new Redis(redisUrl, redisOptions);
+export const dbEventRedisReader = new Redis(redisUrl, redisOptions);
 
 redis.on("connect", () => {
   console.log("🚀 Connected to Redis for high-speed room resolution");
 });
 
+dbEventRedisReader.on("connect", () => {
+  console.log("🚀 Connected to Redis DB event stream reader");
+});
+
 redis.on("error", (err) => {
   console.error("❌ Redis error:", err);
+});
+
+dbEventRedisReader.on("error", (err) => {
+  console.error("❌ Redis DB event stream reader error:", err);
 });
 
 // TTL for room codes (e.g., 24 hours)

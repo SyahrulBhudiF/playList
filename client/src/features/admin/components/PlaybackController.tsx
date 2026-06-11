@@ -1,7 +1,8 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
+import { useMachine } from '@xstate/react';
 import YouTube from 'react-youtube';
 import { socket } from '@/shared/lib/socket';
-import { usePlayback } from '@/shared/hooks/usePlayback';
+import { playbackMachine } from '@/machines/playbackMachine';
 import { MusicRoomView } from '../../shared/components/MusicRoomView';
 import type { PlaybackControllerProps } from '../types';
 
@@ -21,25 +22,52 @@ export function PlaybackController({
   upNext,
   fullQueue,
   activePlayer,
+  hasPreviousTrack,
   onPlayerReady,
   onPlayerEnd,
   onPrevious,
   onGoToSearch,
   togglePlayback,
 }: PlaybackControllerProps) {
-  const { isPlaying, setIsPlaying, progress, setProgress } = usePlayback(nowPlaying);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [playback, sendPlayback] = useMachine(playbackMachine);
+  const isPlaying = playback.matches('playing');
+  const currentTime = playback.context.currentTime;
+  const duration = playback.context.duration;
+  const progress = duration > 0 ? currentTime / duration : 0;
   const playerRefA = useRef<PlayerRef | null>(null);
   const playerRefB = useRef<PlayerRef | null>(null);
   const isPlayingRef = useRef(isPlaying);
+  const lastPlaybackSyncRef = useRef({ currentTime: 0, duration: 0, isPlaying: false });
 
   // Keep ref in sync for the interval closure
   useEffect(() => {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
 
-  // Poll timing from the active player every 1s and sync to participants
+  useEffect(() => {
+    if (nowPlaying) sendPlayback({ type: 'TRACK_LOADED' });
+  }, [nowPlaying, sendPlayback]);
+
+  const emitPlaybackSync = useCallback((ref: PlayerRef, isImmediate = false, forcedPlaying?: boolean) => {
+    const ct = ref.getCurrentTime();
+    const dur = ref.getDuration();
+    if (dur <= 0) return;
+
+    const playing = forcedPlaying ?? isPlayingRef.current;
+    const last = lastPlaybackSyncRef.current;
+    const shouldSync =
+      isImmediate ||
+      last.isPlaying !== playing ||
+      Math.abs(last.currentTime - ct) >= 3 ||
+      Math.abs(last.duration - dur) >= 1;
+
+    if (!shouldSync) return;
+
+    lastPlaybackSyncRef.current = { currentTime: ct, duration: dur, isPlaying: playing };
+    socket.emit('sync_playback', { roomId, currentTime: ct, duration: dur, isPlaying: playing });
+  }, [roomId]);
+
+  // Poll timing for local UI every 1s, but broadcast only on coarse drift/state changes.
   useEffect(() => {
     if (!roomId) return;
 
@@ -50,12 +78,8 @@ export function PlaybackController({
         const ct = ref.getCurrentTime();
         const dur = ref.getDuration();
         if (dur > 0) {
-          setCurrentTime(ct);
-          setDuration(dur);
-          setProgress(ct / dur);
-          
-          // Sync timing only — isPlaying comes from YouTube onPlay/onPause events
-          socket.emit('sync_playback', { roomId, currentTime: ct, duration: dur, isPlaying: isPlayingRef.current });
+          sendPlayback({ type: 'SYNC_TICK', currentTime: ct, duration: dur, isPlaying: isPlayingRef.current });
+          emitPlaybackSync(ref);
         }
       } catch {
         // Player not ready yet
@@ -63,43 +87,55 @@ export function PlaybackController({
     }, 1000);
 
     return () => clearInterval(syncInterval);
-  }, [roomId, activePlayer, setIsPlaying, togglePlayback, setProgress]);
+  }, [roomId, activePlayer, emitPlaybackSync, sendPlayback]);
 
   const handleTogglePlay = useCallback(() => {
     const ref = activePlayer === 'A' ? playerRefA : playerRefB;
 
     if (isPlaying) {
-      setIsPlaying(false);
+      sendPlayback({ type: 'PAUSE' });
       togglePlayback(false);
       if (ref.current) {
         ref.current.pauseVideo();
-        socket.emit('sync_playback', { roomId, currentTime: ref.current.getCurrentTime(), duration: ref.current.getDuration(), isPlaying: false });
+        emitPlaybackSync(ref.current, true, false);
       }
     } else {
-      setIsPlaying(true);
+      sendPlayback({ type: 'PLAY' });
       togglePlayback(true);
       if (ref.current) {
         ref.current.playVideo();
-        socket.emit('sync_playback', { roomId, currentTime: ref.current.getCurrentTime(), duration: ref.current.getDuration(), isPlaying: true });
+        emitPlaybackSync(ref.current, true, true);
       }
     }
-  }, [isPlaying, activePlayer, roomId, setIsPlaying, togglePlayback]);
+  }, [isPlaying, activePlayer, sendPlayback, togglePlayback, emitPlaybackSync]);
 
   const handlePlayerPlay = useCallback((ref: React.MutableRefObject<PlayerRef | null>) => {
-    setIsPlaying(true);
+    sendPlayback({ type: 'PLAY' });
     togglePlayback(true);
     if (ref.current) {
-      socket.emit('sync_playback', { roomId, currentTime: ref.current.getCurrentTime(), duration: ref.current.getDuration(), isPlaying: true });
+      emitPlaybackSync(ref.current, true, true);
     }
-  }, [roomId, setIsPlaying, togglePlayback]);
+  }, [sendPlayback, togglePlayback, emitPlaybackSync]);
 
   const handlePlayerPause = useCallback((ref: React.MutableRefObject<PlayerRef | null>) => {
-    setIsPlaying(false);
+    sendPlayback({ type: 'PAUSE' });
     togglePlayback(false);
     if (ref.current) {
-      socket.emit('sync_playback', { roomId, currentTime: ref.current.getCurrentTime(), duration: ref.current.getDuration(), isPlaying: false });
+      emitPlaybackSync(ref.current, true, false);
     }
-  }, [roomId, setIsPlaying, togglePlayback]);
+  }, [sendPlayback, togglePlayback, emitPlaybackSync]);
+
+  const handleTrackEnd = useCallback(() => {
+    if (playback.matches('transitioning')) return;
+    sendPlayback({ type: 'TRACK_ENDED' });
+    onPlayerEnd()
+      .then((advanced) => {
+        sendPlayback(advanced ? { type: 'NEXT_RESOLVED' } : { type: 'NEXT_FAILED', error: 'No next track' });
+      })
+      .catch((error: unknown) => {
+        sendPlayback({ type: 'NEXT_FAILED', error: error instanceof Error ? error.message : 'Failed to skip track' });
+      });
+  }, [onPlayerEnd, playback, sendPlayback]);
 
   return (
     <section className="w-full h-full">
@@ -114,7 +150,7 @@ export function PlaybackController({
                 playerRefA.current = e.target as unknown as PlayerRef;
                 onPlayerReady('A')(e);
               }}
-              onEnd={onPlayerEnd}
+              onEnd={handleTrackEnd}
               onPlay={() => handlePlayerPlay(playerRefA)}
               onPause={() => handlePlayerPause(playerRefA)}
             />
@@ -129,7 +165,7 @@ export function PlaybackController({
                 playerRefB.current = e.target as unknown as PlayerRef;
                 onPlayerReady('B')(e);
               }}
-              onEnd={onPlayerEnd}
+              onEnd={handleTrackEnd}
               onPlay={() => handlePlayerPlay(playerRefB)}
               onPause={() => handlePlayerPause(playerRefB)}
             />
@@ -153,8 +189,19 @@ export function PlaybackController({
         currentTime={currentTime}
         duration={duration}
         role="admin"
-        onSkip={onPlayerEnd}
-        onPrevious={onPrevious}
+        onSkip={handleTrackEnd}
+        hasPreviousTrack={hasPreviousTrack}
+        onPrevious={() => {
+          if (!hasPreviousTrack || playback.matches('previousLoading')) return;
+          sendPlayback({ type: 'PREVIOUS_REQUESTED' });
+          onPrevious()
+            .then((moved) => {
+              sendPlayback(moved ? { type: 'PREVIOUS_RESOLVED' } : { type: 'PREVIOUS_FAILED', error: 'No previous track' });
+            })
+            .catch((error: unknown) => {
+              sendPlayback({ type: 'PREVIOUS_FAILED', error: error instanceof Error ? error.message : 'Failed to load previous track' });
+            });
+        }}
         onTogglePlay={handleTogglePlay}
         onGoToSearch={onGoToSearch}
       />

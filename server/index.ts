@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { Server } from "socket.io";
 import { createServer, IncomingMessage, ServerResponse } from "http";
 import { execFile } from "child_process";
@@ -8,6 +7,7 @@ import { handleParticipantEvents } from "./src/socket/participantHandler";
 import { handleAdminEvents } from "./src/socket/adminHandler";
 import { handleEOEvents } from "./src/socket/eoHandler";
 import { handleAuthEvents } from "./src/socket/authHandler";
+import { startDbPersistenceWorker } from "./src/workers/dbEvents";
 
 // Verify environment before starting
 if (!process.env.DATABASE_URL) {
@@ -121,6 +121,7 @@ const PORT = 3001;
 // Setup database then start server
 setupDatabase()
   .then(() => {
+    startDbPersistenceWorker();
     httpServer.listen(PORT);
     console.log(`🎵 Music Queue Server running on http://localhost:${PORT}`);
   })

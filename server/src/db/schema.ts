@@ -85,6 +85,24 @@ export async function setupDatabase() {
       CREATE INDEX IF NOT EXISTS songs_queue_idx ON songs(room_id, status, approved_at);
     `;
 
+    // Durable DB event idempotency log
+    console.log("  - Ensuring 'db_event_log' table exists...");
+    await sql`
+      CREATE TABLE IF NOT EXISTS db_event_log (
+        event_id VARCHAR(100) PRIMARY KEY,
+        type VARCHAR(50) NOT NULL,
+        room_id VARCHAR(50) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'processing',
+        processed_at TIMESTAMP WITH TIME ZONE,
+        error TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS db_event_log_room_idx ON db_event_log(room_id, created_at);
+    `;
+
 
     // Migration: Add passkey to rooms if it doesn't exist
     await sql`

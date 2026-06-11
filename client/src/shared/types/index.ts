@@ -41,3 +41,27 @@ export interface Station {
   passkey: string;
   createdAt: string;
 }
+
+export type AdminAuthenticateResponse =
+  | { success: true; user: AdminUser }
+  | { success: false };
+
+export type GetMyStationsResponse = {
+  success: boolean;
+  stations?: Station[];
+};
+
+export type GetPendingAdminsResponse = {
+  success: boolean;
+  admins?: PendingAdmin[];
+};
+
+export type CreateStationResponse = {
+  success: boolean;
+  roomId?: string;
+  error?: string;
+};
+
+export type ModerateAdminResponse = {
+  success: boolean;
+};
