@@ -2,15 +2,7 @@ import { useEffect } from 'react';
 import { socket } from '../../../shared/lib/socket';
 import type { PendingSong, Track } from '../../../shared/types';
 import { useRoomStore } from '../../../stores/roomStore';
-
-type JoinRoomResponse = {
-  success: boolean;
-  code?: string;
-};
-
-type GetNowPlayingResponse = {
-  nowPlaying?: Track | null;
-};
+import type { JoinRoomResponse, NowPlayingResponse } from '../types';
 
 export function useMusicRoom(roomId: string) {
   const nowPlaying = useRoomStore((state) => state.nowPlaying);
@@ -45,7 +37,7 @@ export function useMusicRoom(roomId: string) {
 
     const handleRoomKeyInfo = ({ passkey }: { passkey: string }) => useRoomStore.getState().setRoomKey(passkey);
 
-    socket.emit('get_now_playing', { roomId }, (res: GetNowPlayingResponse) => {
+    socket.emit('get_now_playing', { roomId }, (res: NowPlayingResponse) => {
       if (res.nowPlaying) useRoomStore.getState().setNowPlaying(res.nowPlaying);
       useRoomStore.getState().setIsConnecting(false);
     });

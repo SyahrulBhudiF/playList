@@ -2,44 +2,20 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { socket } from '../../../shared/lib/socket';
 import { useDebounce } from '../../../shared/hooks/useDebounce';
 import type { YouTubeProps } from 'react-youtube';
-import type { Track, PendingSong, SearchResult } from '../types';
+import type {
+  BasicResponse,
+  EoTrackEndedResponse,
+  PendingSong,
+  PlayerRef,
+  QueueSong,
+  RoomKeyInfo,
+  SearchResult,
+  SearchSongsResponse,
+  SearchSuggestionsResponse,
+  SongUpdatedPayload,
+  Track,
+} from '../types';
 import { useAdminQueueStore } from '../../../stores/adminQueueStore';
-
-type BasicResponse = {
-  success: boolean;
-  error?: string;
-};
-
-type RoomKeyInfo = { passkey: string };
-
-type QueueSong = PendingSong & Partial<Track>;
-
-type EoTrackEndedResponse = {
-  success: boolean;
-  nextTrack: Track | null;
-  upNext: Track | null;
-};
-
-type SongUpdatedPayload = { id: string; title: string };
-
-type SearchSuggestionsResponse = {
-  success: boolean;
-  suggestions?: string[];
-};
-
-type SearchSongsResponse = {
-  success: boolean;
-  results?: SearchResult[];
-};
-
-interface PlayerRef {
-  mute: () => void;
-  unMute: () => void;
-  playVideo: () => void;
-  pauseVideo: () => void;
-  getCurrentTime: () => number;
-  getDuration: () => number;
-}
 
 const normalize = (value: string) => value.toLowerCase().trim();
 

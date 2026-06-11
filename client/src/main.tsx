@@ -6,6 +6,7 @@ import {
   createRouter,
   createRoute,
   createRootRoute,
+  redirect,
 } from '@tanstack/react-router';
 import './index.css';
 
@@ -196,15 +197,26 @@ const adminLoginRoute = createRoute({
   component: withSuspense(AdminLoginPage),
 });
 
-const adminHubRoute = createRoute({
+const adminBaseRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin',
+  beforeLoad: () => {
+    if (!localStorage.getItem('adminToken')) {
+      throw redirect({ to: '/admin/login' });
+    }
+  },
+  component: () => <Outlet />,
+});
+
+const adminHubRoute = createRoute({
+  getParentRoute: () => adminBaseRoute,
+  path: '/',
   component: withSuspense(AdminHubPage),
 });
 
 const adminRoomRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/admin/$roomId',
+  getParentRoute: () => adminBaseRoute,
+  path: '$roomId',
   component: withSuspense(AdminDashboardPage),
 });
 
@@ -212,8 +224,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   participantBaseRoute.addChildren([participantIndexRoute, participantRequestRoute]),
   adminLoginRoute,
-  adminHubRoute,
-  adminRoomRoute,
+  adminBaseRoute.addChildren([adminHubRoute, adminRoomRoute]),
 ]);
 
 const router = createRouter({ routeTree });

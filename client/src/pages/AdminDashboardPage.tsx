@@ -31,13 +31,6 @@ export function AdminDashboardPage() {
     setPreviewActive(youtubeId !== null);
   }, [setPreviewActive]);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!loading && !token) {
-      navigate({ to: '/admin/login' });
-    }
-  }, [token, loading, navigate]);
-
   useEffect(() => {
     document.title = `Station ${roomId.toUpperCase()} | Admin Control`;
   }, [roomId]);

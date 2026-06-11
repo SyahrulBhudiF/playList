@@ -1,10 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { socket } from '../../../shared/lib/socket';
-import type { AdminUser } from '../../../shared/types';
-
-type AdminAuthenticateResponse =
-  | { success: true; user: AdminUser }
-  | { success: false };
+import type { AdminAuthenticateResponse, AdminUser } from '../../../shared/types';
 
 export function useAdminAuth() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('adminToken'));

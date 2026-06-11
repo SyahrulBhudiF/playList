@@ -5,38 +5,14 @@ import { useDebounce } from '../../../shared/hooks/useDebounce';
 import type { PendingSong, SearchResult, Track } from '../../../shared/types';
 import { participantFlowMachine } from '../../../machines/participantFlowMachine';
 import { useRoomStore } from '../../../stores/roomStore';
-
-type SuggestionsResponse = {
-  success: boolean;
-  suggestions?: string[];
-};
-
-type NowPlayingResponse = {
-  nowPlaying?: Track | null;
-};
-
-type JoinRoomResponse = {
-  success: boolean;
-  message?: string;
-  error?: string;
-  code?: string;
-};
-
-type SearchSongsResponse = {
-  success: boolean;
-  results?: SearchResult[];
-};
-
-type SubmitSongResponse = {
-  success: boolean;
-  error?: string;
-};
-
-type JoinByPasskeyResponse = {
-  success: boolean;
-  roomId?: string;
-  error?: string;
-};
+import type {
+  JoinByPasskeyResponse,
+  JoinRoomResponse,
+  NowPlayingResponse,
+  SearchSongsResponse,
+  SubmitSongResponse,
+  SuggestionsResponse,
+} from '../types';
 
 const normalize = (value: string) => value.toLowerCase().trim();
 

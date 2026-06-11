@@ -11,27 +11,14 @@ import { Input } from '../shared/components/input';
 import { LoadingOverlay } from '../shared/components/LoadingOverlay';
 import { StationCard } from '../features/admin/components/StationCard';
 import { AdminApprovalCard } from '../features/admin/components/AdminApprovalCard';
-import type { PendingAdmin, Station } from '../shared/types';
-
-type GetMyStationsResponse = {
-  success: boolean;
-  stations?: Station[];
-};
-
-type GetPendingAdminsResponse = {
-  success: boolean;
-  admins?: PendingAdmin[];
-};
-
-type CreateStationResponse = {
-  success: boolean;
-  roomId?: string;
-  error?: string;
-};
-
-type ModerateAdminResponse = {
-  success: boolean;
-};
+import type {
+  CreateStationResponse,
+  GetMyStationsResponse,
+  GetPendingAdminsResponse,
+  ModerateAdminResponse,
+  PendingAdmin,
+  Station,
+} from '../shared/types';
 
 const isHubTab = (value: string): value is 'stations' | 'users' =>
   value === 'stations' || value === 'users';
@@ -62,10 +49,6 @@ export function AdminHubPage() {
       });
     }
   }, [token, activeHubTab]);
-
-  useEffect(() => {
-    if (!loading && !token) navigate({ to: '/admin/login' });
-  }, [token, loading, navigate]);
 
   useEffect(() => {
     if (token && user?.role === 'super_admin' && activeHubTab === 'users') {
