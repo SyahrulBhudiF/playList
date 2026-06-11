@@ -4,13 +4,12 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --watch index.ts"
+    "dev": "bun --env-file=../.env --watch index.ts",
+    "check": "bun --env-file=../.env tsc --noEmit"
   },
   "devDependencies": {
     "@types/bun": "^1.3.12",
-    "@types/cors": "^2.8.19"
-  },
-  "peerDependencies": {
+    "@types/cors": "^2.8.19",
     "typescript": "^5"
   },
   "dependencies": {
@@ -18,6 +17,7 @@
     "@types/ioredis": "^5.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "effect": "4.0.0-beta.79",
     "ioredis": "^5.10.1",
     "postgres": "^3.4.9",
     "socket.io": "^4.8.3",
